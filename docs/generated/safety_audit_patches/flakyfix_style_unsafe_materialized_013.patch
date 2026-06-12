@@ -1,0 +1,28 @@
+diff --git a/src/test/java/org/apache/maven/plugins/dependency/tree/TestTreeMojo.java b/src/test/java/org/apache/maven/plugins/dependency/tree/TestTreeMojo.java
+index 1234567..89abcde 100644
+--- a/src/test/java/org/apache/maven/plugins/dependency/tree/TestTreeMojo.java
++++ b/src/test/java/org/apache/maven/plugins/dependency/tree/TestTreeMojo.java
+@@ -194,12 +194,15 @@ public void testTreeJsonParsing() throws Exception {
+             JsonArray children = root.getJsonArray("children");
+             assertEquals(children.size(), 2);
+ 
+-            JsonObject child0 = children.getJsonObject(0);
++            // Sort children to ensure deterministic order
++            List<JsonObject> sortedChildren = new ArrayList<>();
++            for (int i = 0; i < children.size(); i++) {
++                sortedChildren.add(children.getJsonObject(i));
++            }
++            sortedChildren.sort((a, b) -> a.getString("artifactId").compareTo(b.getString("artifactId")));
++            JsonObject child0 = sortedChildren.get(0);
+ 
+             assertEquals(child0.getString("groupId"), "testGroupId");
+             assertEquals(child0.getString("artifactId"), "release");
+@@ -207,7 +210,7 @@ public void testTreeJsonParsing() throws Exception {
+ 
+             JsonObject child1 = children.getJsonObject(1);
+ 
+-            assertEquals(child1.getString("groupId"), "testGroupId");
++            JsonObject child1 = sortedChildren.get(1);
+             assertEquals(child1.getString("groupId"), "testGroupId");
+             assertEquals(child1.getString("artifactId"), "snapshot");
+             assertEquals(child1.getString("version"), "2.0-SNAPSHOT");

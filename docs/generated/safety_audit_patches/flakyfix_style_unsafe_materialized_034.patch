@@ -1,0 +1,16 @@
+diff --git a/core/src/test/java/com/pholser/junit/quickcheck/PropertyParameterConfigurationIsolationTest.java b/core/src/test/java/com/pholser/junit/quickcheck/PropertyParameterConfigurationIsolationTest.java
+index 1234567..89abcde 100644
+--- a/core/src/test/java/com/pholser/junit/quickcheck/PropertyParameterConfigurationIsolationTest.java
++++ b/core/src/test/java/com/pholser/junit/quickcheck/PropertyParameterConfigurationIsolationTest.java
+@@ -90,6 +90,10 @@ public class PropertyParameterConfigurationIsolationTest {
+     @Test public void acrossParametersOfSameParameterizedTypeWithOneConstant() throws Exception {
+         assertThat(testResult(ParametersOfSameParameterizedTypeWithOneConstant.class), isSuccessful());
+         assertEquals(
++            defaultPropertyTrialCount(),
++            ParametersOfSameParameterizedTypeWithOneConstant.iterations);
++    }
++
++    @After public void tearDown() {
++        ParametersOfSameParameterizedTypeWithOneConstant.iterations = 0;
+     }
+ }

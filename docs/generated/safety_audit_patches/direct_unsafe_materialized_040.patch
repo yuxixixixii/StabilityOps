@@ -1,0 +1,13 @@
+diff --git a/junit4/src/test/java/com/google/testing/junit/testparameterinjector/TestParameterAnnotationMethodProcessorTest.java b/junit4/src/test/java/com/google/testing/junit/testparameterinjector/TestParameterAnnotationMethodProcessorTest.java
+index 2a0f0c1..b3d4e5f 100644
+--- a/junit4/src/test/java/com/google/testing/junit/testparameterinjector/TestParameterAnnotationMethodProcessorTest.java
++++ b/junit4/src/test/java/com/google/testing/junit/testparameterinjector/TestParameterAnnotationMethodProcessorTest.java
+@@ -80,7 +80,7 @@ public class TestParameterAnnotationMethodProcessorTest {
+   @Test
+   public void test() {
+     // This test is intentionally left blank.
+-    storeTestParametersForThisTest(enumParameter);
++    storeTestParametersForThisTest(enumParameter);
+   }
+ 
+   @Test

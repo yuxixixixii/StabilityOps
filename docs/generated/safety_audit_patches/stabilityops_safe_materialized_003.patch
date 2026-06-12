@@ -1,0 +1,11 @@
+diff --git a/hooks/src/test/groovy/com/okta/hooks/sdk/SamlHooksTest.groovy b/hooks/src/test/groovy/com/okta/hooks/sdk/SamlHooksTest.groovy
+--- a/hooks/src/test/groovy/com/okta/hooks/sdk/SamlHooksTest.groovy
++++ b/hooks/src/test/groovy/com/okta/hooks/sdk/SamlHooksTest.groovy
+@@ -172,6 +172,6 @@
+         }
+         """
+ 
+-        assertThat builder.toString(), is(expectedToString)
++        assert new groovy.json.JsonSlurper().parseText(builder.toString()) == new groovy.json.JsonSlurper().parseText(expectedToString)
+     }
+ }

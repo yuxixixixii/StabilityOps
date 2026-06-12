@@ -1,0 +1,13 @@
+diff --git a/dubbo-common/src/test/java/org/apache/dubbo/metadata/definition/ServiceDefinitionBuilderTest.java b/dubbo-common/src/test/java/org/apache/dubbo/metadata/definition/ServiceDefinitionBuilderTest.java
+index 1234567..89abcde 100644
+--- a/dubbo-common/src/test/java/org/apache/dubbo/metadata/definition/ServiceDefinitionBuilderTest.java
++++ b/dubbo-common/src/test/java/org/apache/dubbo/metadata/definition/ServiceDefinitionBuilderTest.java
+@@ -50,7 +50,7 @@ public class ServiceDefinitionBuilderTest {
+ 
+     @Test
+     void testBuilderComplexObject() {
+-        TypeDefinitionBuilder.initBuilders(FrameworkModel.defaultModel());
++        TypeDefinitionBuilder.initBuilders(FrameworkModel.defaultModel());
+         FullServiceDefinition fullServiceDefinition = ServiceDefinitionBuilder.buildFullDefinition(DemoService.class);
+         checkComplexObjectAsParam(fullServiceDefinition);
+     }

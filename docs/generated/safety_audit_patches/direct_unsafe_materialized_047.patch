@@ -1,0 +1,20 @@
+diff --git a/hooks/src/test/groovy/com/okta/hooks/sdk/SamlHooksTest.groovy b/hooks/src/test/groovy/com/okta/hooks/sdk/SamlHooksTest.groovy
+index 1234567..89abcde 100644
+--- a/hooks/src/test/groovy/com/okta/hooks/sdk/SamlHooksTest.groovy
++++ b/hooks/src/test/groovy/com/okta/hooks/sdk/SamlHooksTest.groovy
+@@ -112,6 +112,7 @@ class SamlHooksTest {
+     void complexAddRemove() {
+ 
+         def builder = Hooks.builder()
++            .samlAssertion(replace("/authentication/sessionIndex", "definitelyARealSession"))
+             .samlAssertion(replace("/claims/array/attributeValues/1/value", "replacementValue"))
+             .samlAssertion(replace("/authentication/authnContext", [authnContextClassRef: "Something:different?"]))
+             .samlAssertion(add("/claims/foo", new SamlAssertionCommand.SamlAttribute()
+@@ -120,7 +120,6 @@ class SamlHooksTest {
+                         new SamlAssertionCommand.SamlAttributeValue()
+                             .setAttributes(["xsi:type": "xs:string"])
+                             .setValue("bearer")])))
+-            .samlAssertion(replace("/authentication/sessionIndex", "definitelyARealSession"))
+ 
+         def expectedToString = expected """
+         { "commands": [

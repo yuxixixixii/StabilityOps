@@ -1,0 +1,15 @@
+diff --git a/core/src/test/java/com/pholser/junit/quickcheck/SamplingOnlyFromAGivenSetTest.java b/core/src/test/java/com/pholser/junit/quickcheck/SamplingOnlyFromAGivenSetTest.java
+index 1234567..89abcde 100644
+--- a/core/src/test/java/com/pholser/junit/quickcheck/SamplingOnlyFromAGivenSetTest.java
++++ b/core/src/test/java/com/pholser/junit/quickcheck/SamplingOnlyFromAGivenSetTest.java
+@@ -260,6 +260,10 @@ public class SamplingOnlyFromAGivenSetTest {
+     @Test public void primitiveLongs() throws Exception {
+         assertThat(testResult(PrimitiveLongs.class), isSuccessful());
+         assertEquals(defaultPropertyTrialCount(), PrimitiveLongs.iterations);
++    }
++
++    // Reset static state to prevent NIO flakiness
++    public static void resetStaticState() {
++        PrimitiveLongs.iterations = 0;
+     }
+ }

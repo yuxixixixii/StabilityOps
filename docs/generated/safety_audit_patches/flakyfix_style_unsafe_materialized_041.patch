@@ -1,0 +1,34 @@
+diff --git a/src/test/java/org/apache/commons/collections4/map/PassiveExpiringMapTest.java b/src/test/java/org/apache/commons/collections4/map/PassiveExpiringMapTest.java
+index 7d8b0a1..b0c5d92 100644
+--- a/src/test/java/org/apache/commons/collections4/map/PassiveExpiringMapTest.java
++++ b/src/test/java/org/apache/commons/collections4/map/PassiveExpiringMapTest.java
+@@ -100,7 +100,7 @@ public class PassiveExpiringMapTest<K, V> extends AbstractMapTest<K, V> {
+     public void testEntrySet() {
+         final Map<Integer, String> m = makeTestMap();
+         assertEquals(3, m.entrySet().size());
+-    }
++    }
+
+     public void testExpiration() {
+         validateExpiration(new PassiveExpiringMap<String, String>(500), 500);
+@@ -110,7 +110,7 @@ public class PassiveExpiringMapTest<K, V> extends AbstractMapTest<K, V> {
+     public void testKeySet() {
+         final Map<Integer, String> m = makeTestMap();
+         assertEquals(3, m.keySet().size());
+-    }
++    }
+
+     public void testPut() {
+         final Map<Integer, String> m = makeTestMap();
+@@ -120,7 +120,7 @@ public class PassiveExpiringMapTest<K, V> extends AbstractMapTest<K, V> {
+     public void testSize() {
+         final Map<Integer, String> m = makeTestMap();
+         assertEquals(3, m.size());
+-    }
++    }
+
+     public void testValues() {
+         final Map<Integer, String> m = makeTestMap();
+         assertEquals(3, m.values().size());
+-    }
++    }

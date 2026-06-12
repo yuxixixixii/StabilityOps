@@ -1,0 +1,12 @@
+diff --git a/core/src/test/java/com/pholser/junit/quickcheck/SamplingButAlsoIncludingAGivenSetTest.java b/core/src/test/java/com/pholser/junit/quickcheck/SamplingButAlsoIncludingAGivenSetTest.java
+--- a/core/src/test/java/com/pholser/junit/quickcheck/SamplingButAlsoIncludingAGivenSetTest.java
++++ b/core/src/test/java/com/pholser/junit/quickcheck/SamplingButAlsoIncludingAGivenSetTest.java
+@@ -129,6 +129,8 @@
+     }
+ 
+     @Test public void wrapperBytes() throws Exception {
++        WrapperBytes.iterations = 0;
++        WrapperBytes.values.clear();
+         assertThat(testResult(WrapperBytes.class), isSuccessful());
+         assertEquals(defaultPropertyTrialCount(), WrapperBytes.iterations);
+         assertEquals(

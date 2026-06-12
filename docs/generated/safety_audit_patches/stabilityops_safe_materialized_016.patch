@@ -1,0 +1,11 @@
+diff --git a/src/test/java/com/j256/ormlite/dao/RuntimeExceptionDaoTest.java b/src/test/java/com/j256/ormlite/dao/RuntimeExceptionDaoTest.java
+--- a/src/test/java/com/j256/ormlite/dao/RuntimeExceptionDaoTest.java
++++ b/src/test/java/com/j256/ormlite/dao/RuntimeExceptionDaoTest.java
+@@ -1007,6 +1007,7 @@
+ 
+ 	@Test(expected = RuntimeException.class)
+ 	public void testStartThreadConnectionThrows() throws Exception {
++	try { com.j256.ormlite.table.TableUtils.dropTable(connectionSource, Foo.class, true); } catch (java.sql.SQLException ignored) { }
+ 		@SuppressWarnings("unchecked")
+ 		Dao<Foo, String> dao = (Dao<Foo, String>) createMock(Dao.class);
+ 		RuntimeExceptionDao<Foo, String> rtDao = new RuntimeExceptionDao<Foo, String>(dao);

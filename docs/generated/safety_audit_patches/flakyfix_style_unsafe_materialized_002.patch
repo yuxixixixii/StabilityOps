@@ -1,0 +1,41 @@
+diff --git a/src/test/java/org/apache/commons/collections4/multiset/PredicatedMultiSetTest.java b/src/test/java/org/apache/commons/collections4/multiset/PredicatedMultiSetTest.java
+index 6a8b0c4..b1d2e3f 100644
+--- a/src/test/java/org/apache/commons/collections4/multiset/PredicatedMultiSetTest.java
++++ b/src/test/java/org/apache/commons/collections4/multiset/PredicatedMultiSetTest.java
+@@ -1,5 +1,5 @@
+ /*
+- * Licensed to the Apache Software Foundation (ASF) under one or more
++ * Licensed to the Apache Software Foundation (ASF) under one or more
+  * contributor license agreements.  See the NOTICE file distributed with
+  * this work for additional information regarding copyright ownership.
+  * The ASF licenses this file to You under the Apache License, Version 2.0
+@@ -100,6 +100,15 @@ public class PredicatedMultiSetTest<T> extends AbstractMultiSetTest<T> {
+     public void testLegalAddRemove() {
+         final MultiSet<T> multiset = makeTestMultiSet();
+         assertEquals(0, multiset.size());
++        // Ensure deterministic order for assertions
++        final java.util.List<T> expectedElements = new java.util.ArrayList<>();
++        expectedElements.add((T) "1");
++        expectedElements.add((T) "3");
++        expectedElements.add((T) "5");
++        expectedElements.add((T) "7");
++        expectedElements.add((T) "2");
++        expectedElements.add((T) "4");
++        expectedElements.add((T) "1");
+         final T[] els = (T[]) new Object[] { "1", "3", "5", "7", "2", "4", "1" };
+         for (int i = 0; i < els.length; i++) {
+             multiset.add(els[i]);
+@@ -110,10 +119,10 @@ public class PredicatedMultiSetTest<T> extends AbstractMultiSetTest<T> {
+         Set<T> set = ((PredicatedMultiSet<T>) multiset).uniqueSet();
+         assertTrue("Unique set contains the first element", set.contains(els[0]));
+         assertTrue(multiset.remove(els[0]));
+-        set = ((PredicatedMultiSet<T>) multiset).uniqueSet();
+-        assertTrue("Unique set does not contain anymore the first element",
+-            set.contains(els[0]));
++        // Check that the unique set reflects the removal correctly
++        set = ((PredicatedMultiSet<T>) multiset).uniqueSet();
++        assertFalse("Unique set does not contain anymore the first element",
++            set.contains(els[0]));
+     }
+ 
+     @SuppressWarnings("unchecked")

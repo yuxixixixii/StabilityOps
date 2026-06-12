@@ -1,0 +1,13 @@
+diff --git a/core/src/test/java/com/pholser/junit/quickcheck/ExhaustingAGivenSetTest.java b/core/src/test/java/com/pholser/junit/quickcheck/ExhaustingAGivenSetTest.java
+index 1234567..89abcde 100644
+--- a/core/src/test/java/com/pholser/junit/quickcheck/ExhaustingAGivenSetTest.java
++++ b/core/src/test/java/com/pholser/junit/quickcheck/ExhaustingAGivenSetTest.java
+@@ -154,7 +154,7 @@ public class ExhaustingAGivenSetTest {
+     @Test public void primitiveChars() throws Exception {
+         assertThat(testResult(PrimitiveChars.class), isSuccessful());
+         assertEquals(2, PrimitiveChars.iterations);
+-        assertEquals(
++        assertEquals(
+             new HashSet<>(asList('Z', 'z')),
+             PrimitiveChars.testCases);
+     }

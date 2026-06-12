@@ -1,0 +1,33 @@
+.DS_Store
+__pycache__/
+*.py[cod]
+
+# Local environments and tools.
+.venv/
+.venv-vllm/
+tools/
+
+# Large or machine-specific experiment artifacts.
+runs/
+runs_remote/
+data/local_repo_cache/
+data/local_patch_cache/
+data/local_raw_test_cache/
+data/worktrees/
+dist/
+
+# LaTeX build outputs.
+paper_jss/*.aux
+paper_jss/*.bbl
+paper_jss/*.blg
+paper_jss/*.fdb_latexmk
+paper_jss/*.fls
+paper_jss/*.log
+paper_jss/*.out
+paper_jss/*.spl
+
+# Private scratch files and downloaded papers.
+*.pdf
+papers/
+参考文献/
+empty-boat-video/

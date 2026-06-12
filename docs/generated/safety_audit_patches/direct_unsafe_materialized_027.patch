@@ -1,0 +1,13 @@
+diff --git a/src/test/java/com/j256/ormlite/dao/RuntimeExceptionDaoTest.java b/src/test/java/com/j256/ormlite/dao/RuntimeExceptionDaoTest.java
+index 1234567..89abcde 100644
+--- a/src/test/java/com/j256/ormlite/dao/RuntimeExceptionDaoTest.java
++++ b/src/test/java/com/j256/ormlite/dao/RuntimeExceptionDaoTest.java
+@@ -986,7 +986,7 @@ public void testGetSelectStarRowMapperThrow() throws Exception {
+ 		@SuppressWarnings("unchecked")
+ 		Dao<Foo, String> dao = (Dao<Foo, String>) createMock(Dao.class);
+ 		RuntimeExceptionDao<Foo, String> rtDao = new RuntimeExceptionDao<Foo, String>(dao);
+-		expect(dao.getSelectStarRowMapper()).andThrow(new SQLException("Testing catch"));
++		expect(dao.getSelectStarRowMapper()).andThrow(new SQLException("Testing catch"));
+ 		replay(dao);
+ 		rtDao.getSelectStarRowMapper();
+ 		verify(dao);

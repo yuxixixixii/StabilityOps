@@ -1,0 +1,5 @@
+sample_id,dataset,category,project,test_identifier
+r1,reproflake,ID,example/project,example.Test#unorderedMap
+r2,reproflake,OD,example/project,example.Test#stateLeak
+r3,reproflake,TD,example/project,example.Test#asyncWait
+r4,reproflake,NIO,example/project,example.Test#nonIdempotent

@@ -1,0 +1,16 @@
+diff --git a/src/test/java/com/alibaba/json/bvt/path/JSONPath_reverse_test.java b/src/test/java/com/alibaba/json/bvt/path/JSONPath_reverse_test.java
+--- a/src/test/java/com/alibaba/json/bvt/path/JSONPath_reverse_test.java
++++ b/src/test/java/com/alibaba/json/bvt/path/JSONPath_reverse_test.java
+@@ -10,9 +10,9 @@
+     public void test_reserve() throws Exception {
+         JSONObject object = JSON.parseObject("{\"id\":1001,\"name\":\"ljw\",\"age\":50}");
+ 
+-        assertEquals("[1001,\"ljw\"]", JSONPath.reserveToArray(object, "id", "name").toString());
+-        assertEquals("[\"ljw\",1001]", JSONPath.reserveToArray(object, "name", "id").toString());
+-        assertEquals("[\"ljw\",[\"ljw\",1001,50]]", JSONPath.reserveToArray(object, "name", "*").toString());
++        assertEquals(com.alibaba.fastjson.JSON.parse("[1001,\"ljw\"]"), com.alibaba.fastjson.JSON.parse(JSONPath.reserveToArray(object, "id", "name").toString()));
++        assertEquals(com.alibaba.fastjson.JSON.parse("[\"ljw\",1001]"), com.alibaba.fastjson.JSON.parse(JSONPath.reserveToArray(object, "name", "id").toString()));
++        assertEquals(com.alibaba.fastjson.JSON.parse("[\"ljw\",[\"ljw\",1001,50]]"), com.alibaba.fastjson.JSON.parse(JSONPath.reserveToArray(object, "name", "*").toString()));
+     }
+ 
+     public void test_reserve2() throws Exception {

@@ -1,0 +1,15 @@
+diff --git a/core/src/test/java/com/pholser/junit/quickcheck/ExhaustingAGivenSetButIncludingAnotherTest.java b/core/src/test/java/com/pholser/junit/quickcheck/ExhaustingAGivenSetButIncludingAnotherTest.java
+index 1234567..89abcde 100644
+--- a/core/src/test/java/com/pholser/junit/quickcheck/ExhaustingAGivenSetButIncludingAnotherTest.java
++++ b/core/src/test/java/com/pholser/junit/quickcheck/ExhaustingAGivenSetButIncludingAnotherTest.java
+@@ -195,7 +195,7 @@
+     @Test public void primitiveDoubles() throws Exception {
+         assertThat(testResult(PrimitiveDoubles.class), isSuccessful());
+         assertEquals(defaultPropertyTrialCount(), PrimitiveDoubles.iterations);
+-        assertEquals(
+-            new HashSet<>(asList(3.2, -4D)),
+-            new HashSet<>(PrimitiveDoubles.values.subList(0, 2)));
++        assertEquals(
++            new HashSet<>(asList(3.2, -4D)),
++            new HashSet<>(PrimitiveDoubles.values.subList(0, 2)));
+     }

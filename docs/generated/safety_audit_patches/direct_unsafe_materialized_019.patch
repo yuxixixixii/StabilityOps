@@ -1,0 +1,14 @@
+diff --git a/junit4/src/test/java/com/google/testing/junit/testparameterinjector/ParameterValueParsingTest.java b/junit4/src/test/java/com/google/testing/junit/testparameterinjector/ParameterValueParsingTest.java
+index 1234567..89abcde 100644
+--- a/junit4/src/test/java/com/google/testing/junit/testparameterinjector/ParameterValueParsingTest.java
++++ b/junit4/src/test/java/com/google/testing/junit/testparameterinjector/ParameterValueParsingTest.java
+@@ -163,7 +163,7 @@ public class ParameterValueParsingTest {
+   public void parseYamlStringToJavaType_success(
+       @TestParameter ParseYamlValueToJavaTypeCases parseYamlValueToJavaTypeCases) throws Exception {
+     Object result =
+-        ParameterValueParsing.parseYamlStringToJavaType(
++        ParameterValueParsing.parseYamlStringToJavaType(
+             parseYamlValueToJavaTypeCases.yamlString, parseYamlValueToJavaTypeCases.javaClass);
+ 
+     assertThat(result).isEqualTo(parseYamlValueToJavaTypeCases.expectedResult);
+   }

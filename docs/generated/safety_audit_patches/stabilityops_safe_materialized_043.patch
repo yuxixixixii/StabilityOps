@@ -1,0 +1,12 @@
+diff --git a/core/src/test/java/com/pholser/junit/quickcheck/ExhaustingAGivenSetTest.java b/core/src/test/java/com/pholser/junit/quickcheck/ExhaustingAGivenSetTest.java
+--- a/core/src/test/java/com/pholser/junit/quickcheck/ExhaustingAGivenSetTest.java
++++ b/core/src/test/java/com/pholser/junit/quickcheck/ExhaustingAGivenSetTest.java
+@@ -256,6 +256,8 @@
+     }
+ 
+     @Test public void wrapperFloats() throws Exception {
++        WrapperFloats.iterations = 0;
++        WrapperFloats.testCases.clear();
+         assertThat(testResult(WrapperFloats.class), isSuccessful());
+         assertEquals(2, WrapperFloats.iterations);
+         assertEquals(

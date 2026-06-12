@@ -1,0 +1,28 @@
+diff --git a/elastic-job-lite-core/src/test/java/io/elasticjob/lite/util/json/GsonFactoryTest.java b/elastic-job-lite-core/src/test/java/io/elasticjob/lite/util/json/GsonFactoryTest.java
+index 1234567..89abcde 100644
+--- a/elastic-job-lite-core/src/test/java/io/elasticjob/lite/util/json/GsonFactoryTest.java
++++ b/elastic-job-lite-core/src/test/java/io/elasticjob/lite/util/json/GsonFactoryTest.java
+@@ -36,6 +36,7 @@ public final class GsonFactoryTest {
+     @Test
+     public void assertGetGson() {
+         assertThat(GsonFactory.getGson(), is(GsonFactory.getGson()));
++    }
+     
+     @Test
+     public void assertRegisterTypeAdapter() {
+@@ -52,4 +55,10 @@ public final class GsonFactoryTest {
+         assertThat(beforeRegisterGson.toJson(new GsonFactoryTest()), is("{}"));
+         assertThat(GsonFactory.getGson().toJson(new GsonFactoryTest()), is("test"));
+     }
++    
++    private static void resetGsonFactory() {
++        // Reset the GsonFactory to avoid state pollution from previous tests
++        try {
++            java.lang.reflect.Field field = GsonFactory.class.getDeclaredField("gson");
++            field.setAccessible(true);
++            field.set(null, null);
++        } catch (Exception e) {
++            // Ignore, as this is just a best-effort cleanup
++        }
++    }
+ }

@@ -1,0 +1,47 @@
+diff --git a/tika-parsers/tika-parsers-standard/tika-parsers-standard-modules/tika-parser-microsoft-module/src/test/java/org/apache/tika/parser/microsoft/ooxml/xps/XPSParserTest.java b/tika-parsers/tika-parsers-standard/tika-parsers-standard-modules/tika-parser-microsoft-module/src/test/java/org/apache/tika/parser/microsoft/ooxml/xps/XPSParserTest.java
+index 1234567..89abcde 100644
+--- a/tika-parsers/tika-parsers-standard/tika-parsers-standard-modules/tika-parser-microsoft-module/src/test/java/org/apache/tika/parser/microsoft/ooxml/xps/XPSParserTest.java
++++ b/tika-parsers/tika-parsers-standard/tika-parsers-standard-modules/tika-parser-microsoft-module/src/test/java/org/apache/tika/parser/microsoft/ooxml/xps/XPSParserTest.java
+@@ -59,7 +59,7 @@ public class XPSParserTest extends TikaTest {
+     public void testVarious() throws Exception {
+         List<Metadata> metadataList = getRecursiveMetadata("testXPS_various.xps");
+         //confirm embedded images and thumbnails were extracted
+-        assertEquals(4, metadataList.size());
++        assertEquals(4, metadataList.size());
+ 
+         //now check for content in the right order
+         String quickBrownFox =
+@@ -69,20 +69,20 @@ public void testVarious() throws Exception {
+         String content = metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT);
+         assertContains(quickBrownFox, content);
+ 
+-        assertContains("The \u0627\u0644\u0628\u0646\u064A fox", content);
++        assertContains("The \u0627\u0644\u0628\u0646\u064A fox", content);
+ 
+-        assertContains("\u0644\u062B\u0639\u0644\u0628 brown \u0627\u0644\u0633\u0631\u064A\u0639",
+-                content);
++        assertContains("\u0644\u062B\u0639\u0644\u0628 brown \u0627\u0644\u0633\u0631\u064A\u0639",
++                content);
+ 
+         //make sure the urls come through
+-        assertContains("<a href=\"http://tika.apache.org/\">http://tika.apache.org/</a>", content);
++        assertContains("<a href=\"http://tika.apache.org/\">http://tika.apache.org/</a>", content);
+ 
+         Metadata metadata = metadataList.get(0);
+         assertEquals("Allison, Timothy B.", metadata.get(TikaCoreProperties.CREATOR));
+         assertEquals("2017-12-12T11:15:38Z", metadata.get(TikaCoreProperties.CREATED));
+         assertEquals("2017-12-12T11:15:38Z", metadata.get(TikaCoreProperties.MODIFIED));
+ 
+ 
+-        assertEquals("image/png", metadataList.get(1).get(Metadata.CONTENT_TYPE));
++        assertEquals("image/png", metadataList.get(1).get(Metadata.CONTENT_TYPE));
+ 
+         Metadata inlineJpeg = metadataList.get(2);
+         assertEquals("image/jpeg", inlineJpeg.get(Metadata.CONTENT_TYPE));
+         assertContains("INetCache", inlineJpeg.get(TikaCoreProperties.ORIGINAL_RESOURCE_NAME));
+         assertEquals(TikaCoreProperties.EmbeddedResourceType.INLINE.toString(),
+                 inlineJpeg.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
+ 
+-        assertEquals("image/jpeg", metadataList.get(3).get(Metadata.CONTENT_TYPE));
++        assertEquals("image/jpeg", metadataList.get(3).get(Metadata.CONTENT_TYPE));
+ 

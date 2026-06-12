@@ -1,0 +1,12 @@
+diff --git a/core/src/test/java/com/alibaba/fastjson2/issues_1700/Issue1745.java b/core/src/test/java/com/alibaba/fastjson2/issues_1700/Issue1745.java
+--- a/core/src/test/java/com/alibaba/fastjson2/issues_1700/Issue1745.java
++++ b/core/src/test/java/com/alibaba/fastjson2/issues_1700/Issue1745.java
+@@ -39,7 +39,7 @@
+ 
+         JSONObject object = JSON.parseObject(str, features);
+         JSONArray jsonArray = object.getJSONArray("features");
+-        assertEquals("[{\"maxFillRatio\":{\"ref\":\"不引用\",\"original\":100},\"minFillRatio\":{\"ref\":\"不引用\",\"original\":0}}]", jsonArray.toJSONString());
++        assertEquals(com.alibaba.fastjson2.JSON.parse("[{\"maxFillRatio\":{\"ref\":\"不引用\",\"original\":100},\"minFillRatio\":{\"ref\":\"不引用\",\"original\":0}}]"), com.alibaba.fastjson2.JSON.parse(jsonArray.toJSONString()));
+         assertEquals(1, jsonArray.size());
+         assertEquals(100, jsonArray.getJSONObject(0).getJSONObject("maxFillRatio").getIntValue("original"));
+         assertEquals(0, jsonArray.getJSONObject(0).getJSONObject("minFillRatio").getIntValue("original"));

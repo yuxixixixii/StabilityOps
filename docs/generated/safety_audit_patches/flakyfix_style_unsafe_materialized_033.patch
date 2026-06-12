@@ -1,0 +1,53 @@
+diff --git a/src/test/java/org/apache/commons/collections4/bag/HashBagTest.java b/src/test/java/org/apache/commons/collections4/bag/HashBagTest.java
+index 3a7d9f0..b6e8c1a 100644
+--- a/src/test/java/org/apache/commons/collections4/bag/HashBagTest.java
++++ b/src/test/java/org/apache/commons/collections4/bag/HashBagTest.java
+@@ -1,6 +1,6 @@
+ /*
+  * Licensed to the Apache Software Foundation (ASF) under one or more
+- * contributor license agreements.  See the NOTICE file distributed with
++ * contributor license agreements.  See the NOTICE file distributed with
+  * this work for additional information regarding copyright ownership.
+  * The ASF licenses this file to You under the Apache License, Version 2.0
+  * (the "License"); you may not use this file except in compliance with
+@@ -10,6 +10,10 @@
+  */
+ package org.apache.commons.collections4.bag;
+ 
++import java.util.Arrays;
++import java.util.Collections;
++import java.util.List;
++
+ import junit.framework.Test;
+ 
+ import org.apache.commons.collections4.Bag;
+@@ -30,4 +33,25 @@
+         return "4";
+     }
+ 
++    // Test method that was identified as flaky due to ID (implementation-dependent) issues
++    public void testCollectionToArray2() {
++        final Bag<String> bag = new HashBag<>();
++        bag.add("a", 2);
++        bag.add("b", 1);
++        bag.add("c", 3);
++
++        // Convert to array and sort for deterministic comparison
++        final Object[] array = bag.toArray();
++        Arrays.sort(array);
++
++        // Expected sorted elements based on the bag contents
++        final List<String> expected = Arrays.asList("a", "a", "b", "c", "c", "c");
++        final Object[] expectedArray = expected.toArray();
++        Arrays.sort(expectedArray);
++
++        assertTrue("Arrays should be equal", Arrays.equals(array, expectedArray));
++    }
++
+ //    public void testCreate() throws Exception {
+ //        Bag<T> bag = makeObject();
+ //        writeExternalFormToDisk((java.io.Serializable) bag, "src/test/resources/data/test/HashBag.emptyCollection.version4.obj");
+ //        bag = makeFullCollection();
+ //        writeExternalFormToDisk((java.io.Serializable) bag, "src/test/resources/data/test/HashBag.fullCollection.version4.obj");
+ //    }
+ }

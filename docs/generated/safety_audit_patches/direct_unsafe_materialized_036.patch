@@ -1,0 +1,17 @@
+diff --git a/innodb-java-reader/src/test/java/com/alibaba/innodb/java/reader/sk/SimpleSkTableReaderTest.java b/innodb-java-reader/src/test/java/com/alibaba/innodb/java/reader/sk/SimpleSkTableReaderTest.java
+index 6a1f0d5..b3e4c2a 100644
+--- a/innodb-java-reader/src/test/java/com/alibaba/innodb/java/reader/sk/SimpleSkTableReaderTest.java
++++ b/innodb-java-reader/src/test/java/com/alibaba/innodb/java/reader/sk/SimpleSkTableReaderTest.java
+@@ -1077,9 +1077,7 @@ public class SimpleSkTableReaderTest extends AbstractTest {
+   }
+ 
+   @Test
+-  public void testQueryBySkAgeDescMysql57() {
+-    testQueryBySkAgeDesc(a -> a.withMysql57());
+-  }
++  public void testQueryBySkAgeDescMysql57() {
++    testQueryBySkAgeDesc(a -> a.withMysql57());
++  }
+ 
+   @Test
+   public void testQueryBySkAgeDescMysql80() {

@@ -1,0 +1,16 @@
+diff --git a/core/src/test/java/com/pholser/junit/quickcheck/UsualJUnitMachineryOnTraitBasedPropertyTest.java b/core/src/test/java/com/pholser/junit/quickcheck/UsualJUnitMachineryOnTraitBasedPropertyTest.java
+index 4b0c8f1..a7e8d9c 100644
+--- a/core/src/test/java/com/pholser/junit/quickcheck/UsualJUnitMachineryOnTraitBasedPropertyTest.java
++++ b/core/src/test/java/com/pholser/junit/quickcheck/UsualJUnitMachineryOnTraitBasedPropertyTest.java
+@@ -63,6 +63,11 @@ public class UsualJUnitMachineryOnTraitBasedPropertyTest {
+     private static final OutputStream bytesOut = new ByteArrayOutputStream();
+ 
+     @BeforeClass public static void setUpStreams() {
++        bytesOut.reset();
++    }
++
++    @After public void cleanUpStreams() {
++        bytesOut.reset();
+     }
+ 
+     @Test public void expectedOrderingOfMethods() throws Exception {

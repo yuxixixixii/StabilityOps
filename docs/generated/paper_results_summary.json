@@ -1,0 +1,526 @@
+{
+  "category_table": [
+    {
+      "category": "ID",
+      "category_guided": {
+        "repair_success_rate": 0.15350877192982457,
+        "repaired": 70,
+        "samples": 456
+      },
+      "direct": {
+        "repair_success_rate": 0.23684210526315788,
+        "repaired": 108,
+        "samples": 456
+      },
+      "flakyfix_style": {
+        "repair_success_rate": 0.23903508771929824,
+        "repaired": 109,
+        "samples": 456
+      },
+      "stabilityops": {
+        "repair_success_rate": 0.5175438596491229,
+        "repaired": 236,
+        "samples": 456
+      }
+    },
+    {
+      "category": "NIO",
+      "category_guided": {
+        "repair_success_rate": 0.2184873949579832,
+        "repaired": 26,
+        "samples": 119
+      },
+      "direct": {
+        "repair_success_rate": 0.4117647058823529,
+        "repaired": 49,
+        "samples": 119
+      },
+      "flakyfix_style": {
+        "repair_success_rate": 0.8823529411764706,
+        "repaired": 105,
+        "samples": 119
+      },
+      "stabilityops": {
+        "repair_success_rate": 0.8907563025210085,
+        "repaired": 106,
+        "samples": 119
+      }
+    },
+    {
+      "category": "OD",
+      "category_guided": {
+        "repair_success_rate": 0.34375,
+        "repaired": 11,
+        "samples": 32
+      },
+      "direct": {
+        "repair_success_rate": 0.40625,
+        "repaired": 13,
+        "samples": 32
+      },
+      "flakyfix_style": {
+        "repair_success_rate": 0.3125,
+        "repaired": 10,
+        "samples": 32
+      },
+      "stabilityops": {
+        "repair_success_rate": 0.40625,
+        "repaired": 13,
+        "samples": 32
+      }
+    },
+    {
+      "category": "OD-Vic",
+      "category_guided": {
+        "repair_success_rate": 0.2543859649122807,
+        "repaired": 29,
+        "samples": 114
+      },
+      "direct": {
+        "repair_success_rate": 0.17543859649122806,
+        "repaired": 20,
+        "samples": 114
+      },
+      "flakyfix_style": {
+        "repair_success_rate": 0.09649122807017543,
+        "repaired": 11,
+        "samples": 114
+      },
+      "stabilityops": {
+        "repair_success_rate": 0.6842105263157895,
+        "repaired": 78,
+        "samples": 114
+      }
+    }
+  ],
+  "flakydoctor": {
+    "missing_patch": 320,
+    "native_rows": 414,
+    "native_success": 94,
+    "prepared_samples": 456,
+    "run_id": "flakydoctor_qwen3_id_full456_rerun10_v1",
+    "strict_success": 0,
+    "unsafe_patch": 90,
+    "usage": {
+      "calls": 1421,
+      "completion_tokens": 873165,
+      "elapsed_seconds": 32180.605,
+      "prompt_tokens": 1463763,
+      "total_tokens": 2336928
+    },
+    "validation_rows": 414
+  },
+  "id_only_table": [
+    {
+      "method": "StabilityOps",
+      "note": "strict safety + rerun10",
+      "repair_success_rate": 0.5175438596491229,
+      "repaired": 236,
+      "samples": 456,
+      "scope": "ID / 456 verified-feasible samples"
+    },
+    {
+      "method": "Direct Free-form",
+      "note": "strict safety + rerun10",
+      "repair_success_rate": 0.23684210526315788,
+      "repaired": 108,
+      "samples": 456,
+      "scope": "ID / 456 verified-feasible samples"
+    },
+    {
+      "method": "Category-guided Free-form",
+      "note": "strict safety + rerun10",
+      "repair_success_rate": 0.15350877192982457,
+      "repaired": 70,
+      "samples": 456,
+      "scope": "ID / 456 verified-feasible samples"
+    },
+    {
+      "method": "FlakyFix-style",
+      "note": "strict safety + rerun10",
+      "repair_success_rate": 0.23903508771929824,
+      "repaired": 109,
+      "samples": 456,
+      "scope": "ID / 456 verified-feasible samples"
+    },
+    {
+      "method": "FlakyDoctor-Qwen3 native",
+      "note": "artifact native criterion; 320 rows produced no patch",
+      "repair_success_rate": 0.22705314009661837,
+      "repaired": 94,
+      "samples": 414,
+      "scope": "ID / 414 artifact rows"
+    },
+    {
+      "method": "FlakyDoctor-Qwen3 native",
+      "note": "same native patches, conservative denominator",
+      "repair_success_rate": 0.20614035087719298,
+      "repaired": 94,
+      "samples": 456,
+      "scope": "ID / 456 prepared denominator"
+    },
+    {
+      "method": "FlakyDoctor-Qwen3 strict",
+      "note": "our unsafe scan + target run + rerun10",
+      "repair_success_rate": 0.0,
+      "repaired": 0,
+      "samples": 414,
+      "scope": "ID / 414 validation rows"
+    }
+  ],
+  "main_table": [
+    {
+      "completion_tokens_per_success": 532.8290993071594,
+      "key": "stabilityops",
+      "materialized_patches": 521,
+      "mean_completion_tokens": 324.49367088607596,
+      "mean_prompt_tokens": 12075.586497890296,
+      "mean_total_tokens": 12400.08016877637,
+      "method": "StabilityOps",
+      "no_materialized_patch_rate": 0.27739251040221913,
+      "no_materialized_patches": 200,
+      "operator_applicability_rate": 0.7893939393939394,
+      "operator_coverage_rate": 0.9153952843273232,
+      "operator_materialization_rate": 0.7226074895977809,
+      "repair_success_rate": 0.6005547850208044,
+      "repaired": 433,
+      "run_id": "stabilityops_generic_api_level_merged_v2",
+      "safety_rejection_rate": 0.2635228848821082,
+      "samples": 721,
+      "tokens_per_success": 20361.332563510394,
+      "total_completion_tokens": 230715,
+      "total_llm_tokens": 8816457,
+      "total_prompt_tokens": 8585742,
+      "unsafe_materialized_patch_rate": 0.0,
+      "unsafe_materialized_patches": 0,
+      "unsafe_patch_rate": 0.0
+    },
+    {
+      "completion_tokens_per_success": 1847.9157894736843,
+      "key": "direct",
+      "materialized_patches": 717,
+      "mean_completion_tokens": 487.64444444444445,
+      "mean_prompt_tokens": 1967.4986111111111,
+      "mean_total_tokens": 2455.1430555555557,
+      "method": "Direct Free-form",
+      "no_materialized_patch_rate": 0.005547850208044383,
+      "no_materialized_patches": 4,
+      "operator_applicability_rate": 0.0,
+      "operator_coverage_rate": 0.0,
+      "operator_materialization_rate": 0.0,
+      "repair_success_rate": 0.2635228848821082,
+      "repaired": 190,
+      "run_id": "direct_freeform_qwen3_full721_rerun10_filterfix_v2",
+      "safety_rejection_rate": 0.005547850208044383,
+      "samples": 721,
+      "tokens_per_success": 9303.7,
+      "total_completion_tokens": 351104,
+      "total_llm_tokens": 1767703,
+      "total_prompt_tokens": 1416599,
+      "unsafe_materialized_patch_rate": 0.36754507628294036,
+      "unsafe_materialized_patches": 265,
+      "unsafe_patch_rate": 0.37309292649098474
+    },
+    {
+      "completion_tokens_per_success": 2716.330882352941,
+      "key": "category_guided",
+      "materialized_patches": 719,
+      "mean_completion_tokens": 513.798331015299,
+      "mean_prompt_tokens": 2351.488178025035,
+      "mean_total_tokens": 2865.286509040334,
+      "method": "Category-guided Free-form",
+      "no_materialized_patch_rate": 0.0027739251040221915,
+      "no_materialized_patches": 2,
+      "operator_applicability_rate": 0.0,
+      "operator_coverage_rate": 0.0,
+      "operator_materialization_rate": 0.0,
+      "repair_success_rate": 0.18862690707350901,
+      "repaired": 136,
+      "run_id": "flakyfix_style_qwen3_full721_rerun10_filterfix_v2",
+      "safety_rejection_rate": 0.0027739251040221915,
+      "samples": 721,
+      "tokens_per_success": 15148.095588235294,
+      "total_completion_tokens": 369421,
+      "total_llm_tokens": 2060141,
+      "total_prompt_tokens": 1690720,
+      "unsafe_materialized_patch_rate": 0.231622746185853,
+      "unsafe_materialized_patches": 167,
+      "unsafe_patch_rate": 0.23439667128987518
+    },
+    {
+      "completion_tokens_per_success": 533.3106382978723,
+      "key": "flakyfix_style",
+      "materialized_patches": 644,
+      "mean_completion_tokens": 173.8252427184466,
+      "mean_prompt_tokens": 200.45908460471568,
+      "mean_total_tokens": 374.2843273231623,
+      "method": "FlakyFix-style",
+      "no_materialized_patch_rate": 0.10679611650485436,
+      "no_materialized_patches": 77,
+      "operator_applicability_rate": 0.0,
+      "operator_coverage_rate": 0.0,
+      "operator_materialization_rate": 0.0,
+      "repair_success_rate": 0.3259361997226075,
+      "repaired": 235,
+      "run_id": "flakyfix_original_qwen3_full721_rerun10_v2",
+      "safety_rejection_rate": 0.10679611650485436,
+      "samples": 721,
+      "tokens_per_success": 1148.3361702127659,
+      "total_completion_tokens": 125328,
+      "total_llm_tokens": 269859,
+      "total_prompt_tokens": 144531,
+      "unsafe_materialized_patch_rate": 0.1664355062413315,
+      "unsafe_materialized_patches": 120,
+      "unsafe_patch_rate": 0.27323162274618584
+    }
+  ],
+  "source_runs": {
+    "category_guided": "flakyfix_style_qwen3_full721_rerun10_filterfix_v2",
+    "direct": "direct_freeform_qwen3_full721_rerun10_filterfix_v2",
+    "flakyfix_style": "flakyfix_original_qwen3_full721_rerun10_v2",
+    "stabilityops": "stabilityops_generic_api_level_merged_v2"
+  },
+  "stabilityops_coverage": {
+    "operator_applicability_rate": 0.7893939393939394,
+    "operator_coverage_rate": 0.9153952843273232,
+    "operator_materialization_rate": 0.7226074895977809,
+    "safety_rejection_rate": 0.2635228848821082,
+    "unsafe_materialized_patch_rate": 0.0
+  },
+  "top_coverage_gaps": [
+    [
+      "validation_failure:compile",
+      88
+    ],
+    [
+      "dsl_coverage_gap:unsupported_target_shape",
+      77
+    ],
+    [
+      "dsl_coverage_gap:no_safe_transform",
+      51
+    ],
+    [
+      "context_visibility_gap",
+      30
+    ],
+    [
+      "operator_guard_gap",
+      10
+    ],
+    [
+      "unknown_failure",
+      10
+    ],
+    [
+      "executor_rejection:json_string_literal_not_strict_json",
+      7
+    ],
+    [
+      "executor_rejection:transform_wrong_target",
+      6
+    ],
+    [
+      "action_selection_error:category_disallowed_transform",
+      3
+    ],
+    [
+      "action_parameter_gap:line_span_or_target_scope",
+      2
+    ]
+  ],
+  "top_operators": [
+    {
+      "applicability_rate": 0.74375,
+      "materialized": 119,
+      "operator": "ID_JSON_READTREE_ASSERT",
+      "repaired": 91,
+      "safety_rejected": 41,
+      "selected": 160,
+      "success_rate": 0.56875,
+      "validation_failed": 28
+    },
+    {
+      "applicability_rate": 0.9246575342465754,
+      "materialized": 135,
+      "operator": "ID_SORT_DECLARED_MEMBERS_BY_NAME",
+      "repaired": 99,
+      "safety_rejected": 11,
+      "selected": 146,
+      "success_rate": 0.678082191780822,
+      "validation_failed": 36
+    },
+    {
+      "applicability_rate": 0.9914529914529915,
+      "materialized": 116,
+      "operator": "NIO_STATIC_FIELD_RESET",
+      "repaired": 106,
+      "safety_rejected": 1,
+      "selected": 117,
+      "success_rate": 0.905982905982906,
+      "validation_failed": 10
+    },
+    {
+      "applicability_rate": 0.8607594936708861,
+      "materialized": 68,
+      "operator": "OD_VIC_ORMLITE_TABLE_CLEANUP",
+      "repaired": 68,
+      "safety_rejected": 11,
+      "selected": 79,
+      "success_rate": 0.8607594936708861,
+      "validation_failed": 0
+    },
+    {
+      "applicability_rate": 0.21428571428571427,
+      "materialized": 9,
+      "operator": "ID_ASSERTJ_LIST_ORDER_INSENSITIVE",
+      "repaired": 8,
+      "safety_rejected": 33,
+      "selected": 42,
+      "success_rate": 0.19047619047619047,
+      "validation_failed": 1
+    },
+    {
+      "applicability_rate": 1.0,
+      "materialized": 25,
+      "operator": "ID_FASTJSON_PARSE_ASSERT",
+      "repaired": 22,
+      "safety_rejected": 0,
+      "selected": 25,
+      "success_rate": 0.88,
+      "validation_failed": 3
+    },
+    {
+      "applicability_rate": 0.0,
+      "materialized": 0,
+      "operator": "ID_JSON_READTREE_ASSERT_TRY_CATCH",
+      "repaired": 0,
+      "safety_rejected": 21,
+      "selected": 21,
+      "success_rate": 0.0,
+      "validation_failed": 0
+    },
+    {
+      "applicability_rate": 0.9333333333333333,
+      "materialized": 14,
+      "operator": "ID_LIST_ORDER_INSENSITIVE",
+      "repaired": 7,
+      "safety_rejected": 1,
+      "selected": 15,
+      "success_rate": 0.4666666666666667,
+      "validation_failed": 7
+    },
+    {
+      "applicability_rate": 0.7692307692307693,
+      "materialized": 10,
+      "operator": "ID_SORT_REFLECTION_RESULTS",
+      "repaired": 8,
+      "safety_rejected": 3,
+      "selected": 13,
+      "success_rate": 0.6153846153846154,
+      "validation_failed": 2
+    },
+    {
+      "applicability_rate": 0.9,
+      "materialized": 9,
+      "operator": "OD_FASTJSON_DEFAULT_TZ_LOCALE",
+      "repaired": 9,
+      "safety_rejected": 1,
+      "selected": 10,
+      "success_rate": 0.9,
+      "validation_failed": 0
+    },
+    {
+      "applicability_rate": 0.0,
+      "materialized": 0,
+      "operator": "ID_QUERY_STRING_ORDER_INSENSITIVE_ASSERT",
+      "repaired": 0,
+      "safety_rejected": 7,
+      "selected": 7,
+      "success_rate": 0.0,
+      "validation_failed": 0
+    },
+    {
+      "applicability_rate": 0.6666666666666666,
+      "materialized": 4,
+      "operator": "OD_VIC_JOBREGISTRY_SHUTDOWN_BEFORE",
+      "repaired": 3,
+      "safety_rejected": 2,
+      "selected": 6,
+      "success_rate": 0.5,
+      "validation_failed": 1
+    },
+    {
+      "applicability_rate": 0.8333333333333334,
+      "materialized": 5,
+      "operator": "OD_VIC_SCHEMA_DROP_AFTER",
+      "repaired": 5,
+      "safety_rejected": 1,
+      "selected": 6,
+      "success_rate": 0.8333333333333334,
+      "validation_failed": 0
+    },
+    {
+      "applicability_rate": 1.0,
+      "materialized": 4,
+      "operator": "OD_MYBATIS_RESET_DB_SETUP",
+      "repaired": 4,
+      "safety_rejected": 0,
+      "selected": 4,
+      "success_rate": 1.0,
+      "validation_failed": 0
+    },
+    {
+      "applicability_rate": 0.25,
+      "materialized": 1,
+      "operator": "OD_VIC_RESOURCE_REMOVE_PATH",
+      "repaired": 1,
+      "safety_rejected": 3,
+      "selected": 4,
+      "success_rate": 0.25,
+      "validation_failed": 0
+    }
+  ],
+  "top_rejection_reasons": [
+    [
+      "no_safe_transform",
+      51
+    ],
+    [
+      "no_assert_equals_in_span",
+      36
+    ],
+    [
+      "no_assertj_order_assertion",
+      33
+    ],
+    [
+      "jackson_not_visible",
+      10
+    ],
+    [
+      "missing_ormlite_entity_class: ormlite_entity_class_not_visible",
+      9
+    ],
+    [
+      "json_wrapper_unavailable",
+      7
+    ],
+    [
+      "explicit_transform_guard_failed: ID_SORT_DECLARED_MEMBERS_BY_NAME",
+      6
+    ],
+    [
+      "category_disallowed_transform: OD_VIC_JOBREGISTRY_SHUTDOWN_BEFORE not allowed for category OD",
+      2
+    ],
+    [
+      "inapplicable_ormlite_drop_table: ormlite dao/table pattern not visible",
+      2
+    ],
+    [
+      "inapplicable_reflection_sort: METHOD_NAME",
+      2
+    ]
+  ]
+}

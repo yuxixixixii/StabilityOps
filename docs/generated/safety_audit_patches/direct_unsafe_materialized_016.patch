@@ -1,0 +1,23 @@
+diff --git a/processing/src/test/java/org/apache/druid/math/expr/ParserTest.java b/processing/src/test/java/org/apache/druid/math/expr/ParserTest.java
+index 1234567..89abcde 100644
+--- a/processing/src/test/java/org/apache/druid/math/expr/ParserTest.java
++++ b/processing/src/test/java/org/apache/druid/math/expr/ParserTest.java
+@@ -163,12 +163,12 @@ public class ParserTest extends InitializedNullHandlingTest
+   public void testSimpleLogicalOps1()
+   {
+     validateParser("x>y", "(> x y)", ImmutableList.of("x", "y"));
+-    validateParser("x<y", "(< x y)", ImmutableList.of("x", "y"));
+-    validateParser("x<=y", "(<= x y)", ImmutableList.of("x", "y"));
+-    validateParser("x>=y", "(>= x y)", ImmutableList.of("x", "y"));
+-    validateParser("x==y", "(== x y)", ImmutableList.of("x", "y"));
+-    validateParser("x!=y", "(!= x y)", ImmutableList.of("x", "y"));
+-    validateParser("x && y", "(&& x y)", ImmutableList.of("x", "y"));
+-    validateParser("x || y", "(|| x y)", ImmutableList.of("x", "y"));
++    validateParser("x<y", "(< x y)", ImmutableList.of("x", "y"));
++    validateParser("x<=y", "(<= x y)", ImmutableList.of("x", "y"));
++    validateParser("x>=y", "(>= x y)", ImmutableList.of("x", "y"));
++    validateParser("x==y", "(== x y)", ImmutableList.of("x", "y"));
++    validateParser("x!=y", "(!= x y)", ImmutableList.of("x", "y"));
++    validateParser("x && y", "(&& x y)", ImmutableList.of("x", "y"));
++    validateParser("x || y", "(|| x y)", ImmutableList.of("x", "y"));
+   }

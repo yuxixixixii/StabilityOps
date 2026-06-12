@@ -1,0 +1,12 @@
+diff --git a/opennlp-tools/src/test/java/opennlp/tools/languagemodel/NgramLanguageModelTest.java b/opennlp-tools/src/test/java/opennlp/tools/languagemodel/NgramLanguageModelTest.java
+--- a/opennlp-tools/src/test/java/opennlp/tools/languagemodel/NgramLanguageModelTest.java
++++ b/opennlp-tools/src/test/java/opennlp/tools/languagemodel/NgramLanguageModelTest.java
+@@ -64,7 +64,7 @@
+ 
+     String[] tokens = model.predictNextTokens("I", "saw");
+     Assert.assertNotNull(tokens);
+-    Assert.assertArrayEquals(new String[] {"the", "fox"}, tokens);
++    Assert.assertEquals(new java.util.HashSet(java.util.Arrays.asList(new String[] {"the")), new java.util.HashSet(java.util.Arrays.asList("fox"}, tokens)));
+   }
+ 
+   @Test

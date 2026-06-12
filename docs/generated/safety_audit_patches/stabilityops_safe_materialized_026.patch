@@ -1,0 +1,11 @@
+diff --git a/core/src/test/java/com/pholser/junit/quickcheck/SamplingOnlyFromAGivenSetTest.java b/core/src/test/java/com/pholser/junit/quickcheck/SamplingOnlyFromAGivenSetTest.java
+--- a/core/src/test/java/com/pholser/junit/quickcheck/SamplingOnlyFromAGivenSetTest.java
++++ b/core/src/test/java/com/pholser/junit/quickcheck/SamplingOnlyFromAGivenSetTest.java
+@@ -464,6 +464,7 @@
+     }
+ 
+     @Test public void explicitConversion() throws Exception {
++        ExplicitConversion.iterations = 0;
+         assertThat(testResult(ExplicitConversion.class), isSuccessful());
+         assertEquals(defaultPropertyTrialCount(), ExplicitConversion.iterations);
+     }

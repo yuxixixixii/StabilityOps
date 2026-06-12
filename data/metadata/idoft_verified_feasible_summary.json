@@ -1,0 +1,14 @@
+{
+  "category_counts": {
+    "ID": 456,
+    "NIO": 119,
+    "OD": 32,
+    "OD-Vic": 114
+  },
+  "dataset": "data/metadata/idoft_verified_feasible.csv",
+  "excluded_categories": {
+    "NOD": 1
+  },
+  "exclusion_reason": "NOD has only one verified-feasible sample and is excluded from formal evaluation.",
+  "total_samples": 721
+}

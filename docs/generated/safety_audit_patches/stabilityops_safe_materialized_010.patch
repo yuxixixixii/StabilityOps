@@ -1,0 +1,14 @@
+diff --git a/junit4/src/main/java/com/google/testing/junit/testparameterinjector/TestParameterAnnotationMethodProcessor.java b/junit4/src/main/java/com/google/testing/junit/testparameterinjector/TestParameterAnnotationMethodProcessor.java
+--- a/junit4/src/main/java/com/google/testing/junit/testparameterinjector/TestParameterAnnotationMethodProcessor.java
++++ b/junit4/src/main/java/com/google/testing/junit/testparameterinjector/TestParameterAnnotationMethodProcessor.java
+@@ -1275,7 +1275,9 @@
+   private ImmutableList<Method> getMethodsIncludingParents(Class<?> clazz) {
+     ImmutableList.Builder<Method> resultBuilder = ImmutableList.builder();
+     while (clazz != null) {
+-      resultBuilder.add(clazz.getDeclaredMethods());
++      java.lang.reflect.Method[] declaredMethods = clazz.getDeclaredMethods();
++      java.util.Arrays.sort(declaredMethods, java.util.Comparator.comparing(java.lang.reflect.Method::getName));
++      resultBuilder.add(declaredMethods);
+       clazz = clazz.getSuperclass();
+     }
+     return resultBuilder.build();

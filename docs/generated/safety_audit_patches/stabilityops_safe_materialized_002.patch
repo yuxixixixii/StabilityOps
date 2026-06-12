@@ -1,0 +1,12 @@
+diff --git a/wls-exporter-core/src/test/java/com/oracle/wls/exporter/domain/ExporterConfigTest.java b/wls-exporter-core/src/test/java/com/oracle/wls/exporter/domain/ExporterConfigTest.java
+--- a/wls-exporter-core/src/test/java/com/oracle/wls/exporter/domain/ExporterConfigTest.java
++++ b/wls-exporter-core/src/test/java/com/oracle/wls/exporter/domain/ExporterConfigTest.java
+@@ -436,7 +436,7 @@
+     public void whenYamlContainsMergeableQueries_MergeThem() {
+         ExporterConfig config = loadFromString(MERGEABLE_CONFIG);
+ 
+-        assertThat(config.toString(), equalTo(MERGED_CONFIG));
++        org.junit.Assert.assertEquals(new com.google.gson.Gson().fromJson(MERGED_CONFIG, Object.class), new com.google.gson.Gson().fromJson(config.toString(), Object.class));
+     }
+ 
+     private static final String MERGEABLE_CONFIG =

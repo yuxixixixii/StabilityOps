@@ -1,0 +1,20 @@
+diff --git a/src/test/java/com/alibaba/json/bvt/support/spring/mock/testcase/FastJsonpHttpMessageConverter4Case3Test.java b/src/test/java/com/alibaba/json/bvt/support/spring/mock/testcase/FastJsonpHttpMessageConverter4Case3Test.java
+index 1234567..89abcde 100644
+--- a/src/test/java/com/alibaba/json/bvt/support/spring/mock/testcase/FastJsonpHttpMessageConverter4Case3Test.java
++++ b/src/test/java/com/alibaba/json/bvt/support/spring/mock/testcase/FastJsonpHttpMessageConverter4Case3Test.java
+@@ -94,13 +94,13 @@ public class FastJsonpHttpMessageConverter4Case3Test {
+     public void test1_2() throws Exception {
+ 
+         JSONObject json = new JSONObject();
+-        json.put("id", 123);
+-        json.put("name", "哈哈哈");
++        json.put("name", "哈哈哈");
++        json.put("id", 123);
+ 
+         ResultActions actions = mockMvc.perform((post("/fastjson/test1?callback=fnUpdateSome").characterEncoding(
+                 "UTF-8").content(json.toJSONString()).contentType(MediaType.APPLICATION_JSON)));
+         actions.andDo(print());
+         actions.andExpect(status().isOk()).andExpect(content().contentType(APPLICATION_JAVASCRIPT))
+-                .andExpect(content().string("/**/fnUpdateSome({\"name\":\"哈哈哈\",\"id\":123})"));
++                .andExpect(content().string("/**/fnUpdateSome({\"name\":\"哈哈哈\",\"id\":123})"));
+     }

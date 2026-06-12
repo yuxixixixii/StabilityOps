@@ -1,0 +1,2 @@
+# Runtime dependencies for the current artifact.
+# The existing metadata and preparation scripts intentionally use only Python stdlib.

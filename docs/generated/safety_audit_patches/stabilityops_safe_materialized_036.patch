@@ -1,0 +1,11 @@
+diff --git a/src/test/java/com/j256/ormlite/misc/TransactionManagerTest.java b/src/test/java/com/j256/ormlite/misc/TransactionManagerTest.java
+--- a/src/test/java/com/j256/ormlite/misc/TransactionManagerTest.java
++++ b/src/test/java/com/j256/ormlite/misc/TransactionManagerTest.java
+@@ -373,6 +373,7 @@
+ 
+ 	@Test
+ 	public void testNestedTransactions() throws Exception {
++	try { com.j256.ormlite.table.TableUtils.dropTable(connectionSource, Foo.class, true); } catch (java.sql.SQLException ignored) { }
+ 		final Dao<Foo, Integer> dao = createDao(Foo.class, true);
+ 		final Foo foo = new Foo();
+ 		assertEquals(1, dao.create(foo));

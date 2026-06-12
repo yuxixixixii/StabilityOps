@@ -1,0 +1,14 @@
+diff --git a/src/test/java/org/rrd4j/core/LongRunning.java b/src/test/java/org/rrd4j/core/LongRunning.java
+index 2c0a0e0..3d1b2f1 100644
+--- a/src/test/java/org/rrd4j/core/LongRunning.java
++++ b/src/test/java/org/rrd4j/core/LongRunning.java
+@@ -66,7 +66,7 @@ public class LongRunning {
+     @Rule
+     public TemporaryFolder folder = new TemporaryFolder();
+ 
+-    public void testVersion1() throws IOException {
++    @Test
++    public void testVersion1() throws IOException {
+         run(1);
+     }
+ 

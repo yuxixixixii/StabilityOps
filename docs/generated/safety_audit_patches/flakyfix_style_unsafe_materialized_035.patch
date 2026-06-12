@@ -1,0 +1,13 @@
+diff --git a/core/src/test/java/com/pholser/junit/quickcheck/SamplingOnlyFromAGivenSetTest.java b/core/src/test/java/com/pholser/junit/quickcheck/SamplingOnlyFromAGivenSetTest.java
+index 1234567..89abcde 100644
+--- a/core/src/test/java/com/pholser/junit/quickcheck/SamplingOnlyFromAGivenSetTest.java
++++ b/core/src/test/java/com/pholser/junit/quickcheck/SamplingOnlyFromAGivenSetTest.java
+@@ -366,6 +366,10 @@ public class SamplingOnlyFromAGivenSetTest {
+     @Test public void ctorOnly() throws Exception {
+         assertThat(testResult(CtorOnly.class), isSuccessful());
+         assertEquals(defaultPropertyTrialCount(), CtorOnly.iterations);
++    }
++
++    @After public void tearDown() {
++        CtorOnly.iterations = 0;
+     }

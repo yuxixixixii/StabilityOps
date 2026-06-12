@@ -1,0 +1,24 @@
+diff --git a/src/test/java/org/apache/commons/collections4/multiset/SynchronizedMultiSetTest.java b/src/test/java/org/apache/commons/collections4/multiset/SynchronizedMultiSetTest.java
+index 3a5b6c7..8d9e0f1 100644
+--- a/src/test/java/org/apache/commons/collections4/multiset/SynchronizedMultiSetTest.java
++++ b/src/test/java/org/apache/commons/collections4/multiset/SynchronizedMultiSetTest.java
+@@ -1,6 +1,6 @@
+ /*
+  * Licensed to the Apache Software Foundation (ASF) under one or more
+- * contributor license agreements.  See the NOTICE file distributed with
++ * contributor license agreements.  See the NOTICE file distributed with
+  * this work for additional information regarding copyright ownership.
+  * The ASF licenses this file to You under the Apache License, Version 2.0
+  * (the "License"); you may not use this file except in compliance with
+@@ -15,6 +15,10 @@
+  */
+ public class SynchronizedMultiSetTest<T> extends AbstractMultiSetTest<T> {
+ 
++    @Override
++    public void setUp() throws Exception {
++        super.setUp();
++    }
++
+     public SynchronizedMultiSetTest(final String testName) {
+         super(testName);
+     }

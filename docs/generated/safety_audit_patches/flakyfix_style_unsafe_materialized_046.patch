@@ -1,0 +1,18 @@
+diff --git a/core/src/test/java/org/apache/struts2/views/freemarker/FreemarkerResultMockedTest.java b/core/src/test/java/org/apache/struts2/views/freemarker/FreemarkerResultMockedTest.java
+index 1234567..89abcde 100644
+--- a/core/src/test/java/org/apache/struts2/views/freemarker/FreemarkerResultMockedTest.java
++++ b/core/src/test/java/org/apache/struts2/views/freemarker/FreemarkerResultMockedTest.java
+@@ -125,11 +125,15 @@ public void testDynamicAttributesSupport() throws Exception {
+         String result = stringWriter.toString();
+ 
+         // Normalize the result to ensure consistent attribute ordering
+-        String normalizedResult = normalize(result);
++        String normalizedResult = normalize(result);
++
++        // Check both possible expected outputs to avoid flakiness due to attribute order
++        if (expectedJDK17.equals(normalizedResult) || expectedJDK18.equals(normalizedResult)) {
++            assertTrue(true); // Test passes if either expected result matches
++        } else {
++            fail("Result does not match expected JDK17 or JDK18 format: " + normalizedResult);
++        }
+     }

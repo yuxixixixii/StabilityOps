@@ -1,0 +1,36 @@
+{
+  "dataset": "data/metadata/idoft_verified_feasible.csv",
+  "output_root": "runs/experiments",
+  "prompts_dir": "prompts",
+  "agent_context_mode": "targeted",
+  "repair_output_mode": "transform",
+  "skip_intent_agents": true,
+  "full_patch_repair_attempts": 0,
+  "transform_action_repair_attempts": 0,
+  "use_validation_summary_agent": false,
+  "methods": [
+    "stabilityops_dsl"
+  ],
+  "models": [
+    {
+      "alias": "qwen3_coder_30b",
+      "model": "Qwen/Qwen3-Coder-30B-A3B-Instruct",
+      "base_url": "http://127.0.0.1:8003/v1",
+      "api_key": "EMPTY",
+      "concurrency": 2
+    }
+  ],
+  "post_fix_reruns": 10,
+  "validation_workers": 2,
+  "mvn": "tools/apache-maven-3.8.8/bin/mvn",
+  "cleanup_worktrees": true,
+  "dry_run": false,
+  "fake_llm": false,
+  "skip_validation": false,
+  "llm": {
+    "temperature": 0.0,
+    "seed": 20260528,
+    "max_tokens": 1536,
+    "timeout_seconds": 240
+  }
+}

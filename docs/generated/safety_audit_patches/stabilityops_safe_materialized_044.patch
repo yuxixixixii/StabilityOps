@@ -1,0 +1,12 @@
+diff --git a/core/src/test/java/com/alibaba/fastjson2/v1issues/issue_2400/Issue2430.java b/core/src/test/java/com/alibaba/fastjson2/v1issues/issue_2400/Issue2430.java
+--- a/core/src/test/java/com/alibaba/fastjson2/v1issues/issue_2400/Issue2430.java
++++ b/core/src/test/java/com/alibaba/fastjson2/v1issues/issue_2400/Issue2430.java
+@@ -27,7 +27,7 @@
+     public void testForIssue2() {
+         String jsonString = "{\"map\":{\"a\":[\"1\",\"2\",\"3\"],\"b\":[\"1\"]},\"name\":\"zhangsan\"}";
+         VO vo = JSON.parseObject(jsonString, VO.class);
+-        assertEquals("{\"map\":{\"a\":[\"1\",\"2\",\"3\"],\"b\":[\"1\"]},\"name\":\"zhangsan\"}", JSON.toJSONString(vo));
++        assertEquals(new com.google.gson.Gson().fromJson("{\"map\":{\"a\":[\"1\",\"2\",\"3\"],\"b\":[\"1\"]},\"name\":\"zhangsan\"}", Object.class), new com.google.gson.Gson().fromJson(JSON.toJSONString(vo), Object.class));
+     }
+ 
+     public static class VO {

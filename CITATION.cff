@@ -1,0 +1,7 @@
+cff-version: 1.2.0
+title: "StabilityOps: Safer Flaky-Test Repair via LLM-Instantiated Guarded Repair Operators"
+message: "If you use this artifact, please cite the corresponding paper or this repository."
+type: software
+authors:
+  - name: "Anonymous"
+license: "MIT"
