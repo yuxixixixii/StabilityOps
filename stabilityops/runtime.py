@@ -98,11 +98,11 @@ class ExperimentConfig:
     skip_validation: bool
     cleanup_worktrees: bool
     limit: int | None
-    agent_context_mode: str
+    context_mode: str
     full_patch_repair_attempts: int
-    use_validation_summary_agent: bool
+    use_validation_summary: bool
     repair_output_mode: str
-    skip_intent_agents: bool
+    skip_auxiliary_reasoning: bool
     transform_action_repair_attempts: int
 
 
@@ -140,11 +140,11 @@ def load_config(path: Path, dry_run: bool = False, fake_llm: bool = False, limit
         skip_validation=bool(raw.get("skip_validation", False) or dry_run),
         cleanup_worktrees=bool(raw.get("cleanup_worktrees", True)),
         limit=limit if limit is not None else raw.get("limit"),
-        agent_context_mode=str(raw.get("agent_context_mode", "rich")),
+        context_mode=str(raw.get("context_mode", "rich")),
         full_patch_repair_attempts=int(raw.get("full_patch_repair_attempts", 0)),
-        use_validation_summary_agent=bool(raw.get("use_validation_summary_agent", False)),
+        use_validation_summary=bool(raw.get("use_validation_summary", False)),
         repair_output_mode=str(raw.get("repair_output_mode", "diff")),
-        skip_intent_agents=bool(raw.get("skip_intent_agents", False)),
+        skip_auxiliary_reasoning=bool(raw.get("skip_auxiliary_reasoning", False)),
         transform_action_repair_attempts=int(raw.get("transform_action_repair_attempts", 0)),
     )
 
@@ -218,64 +218,7 @@ def parse_json_object(text: str) -> dict[str, Any]:
 
 
 def fake_llm_json(prompt_name: str, sample: dict[str, str]) -> dict[str, Any]:
-    category = sample.get("PrimaryCategory", "unknown")
-    if prompt_name == "stability_intent_reasoning":
-        return {
-            "functional_intent": f"Exercise {sample.get(TEST_FIELD, sample.get('sample_id'))}.",
-            "stability_intents": [
-                {
-                    "intent": f"The test should produce deterministic results for category {category}.",
-                    "violation_hypothesis": "Dry-run fake backend does not inspect real failures.",
-                    "evidence": ["dry_run"],
-                    "repair_principle": "No patch is generated in dry-run mode.",
-                    "mapped_category": category,
-                    "confidence": "low",
-                }
-            ],
-        }
-    if prompt_name == "context_planning":
-        return {
-            "selected_intent_index": 0,
-            "context_plan": ["target test file", "setup/teardown", "assertions"],
-            "retrieval_queries": ["dry_run"],
-            "context_budget_policy": "small",
-            "excluded_context": [],
-        }
-    if prompt_name == "stability_intent_critic":
-        return {
-            "intent_reviews": [
-                {
-                    "intent_index": 0,
-                    "supporting_evidence": ["dry_run"],
-                    "counter_evidence": [],
-                    "missing_evidence": ["real LLM and validation evidence are disabled"],
-                    "repairability": "low",
-                    "safety_risk": "low",
-                    "verdict": "keep",
-                }
-            ],
-            "selected_intent_index": 0,
-            "selection_rationale": "Dry-run fake backend keeps the only generated intent.",
-        }
-    if prompt_name == "stability_specification":
-        return {
-            "root_cause": category,
-            "stability_spec": f"The target flaky test should be deterministic under category {category}.",
-            "allowed_patch_transforms": ["dry-run no-op"],
-            "forbidden_patch_transforms": ["skip test", "delete assertion", "patch another test method"],
-            "patch_scope": "target_method_only",
-            "validation_obligations": ["patch applies", "target test passes", "10 reruns pass"],
-            "confidence": "low",
-        }
-    if prompt_name == "validation_summary":
-        return {
-            "decision": "build_failed",
-            "evidence": ["dry-run validation skipped"],
-            "post_fix_runs": 0,
-            "post_fix_failures": 0,
-            "notes": "fake backend",
-        }
-    if prompt_name == "intent_constrained_transform":
+    if prompt_name == "stabilityops_typed_action":
         return {
             "stability_spec": {
                 "required_invariant": "no deterministic repair invariant is inferred in fake mode",
@@ -290,7 +233,20 @@ def fake_llm_json(prompt_name: str, sample: dict[str, str]) -> dict[str, Any]:
                 "risks": ["no transform generated"],
             },
         }
-    return {"patch": "", "changed_files": [], "repair_rationale": "dry-run fake backend", "safety_notes": ["no patch generated"]}
+    return {
+        "stability_spec": {
+            "required_invariant": "unsupported fake prompt",
+            "evidence_lines": [],
+        },
+        "transform_action": {
+            "transform": "NO_SAFE_TRANSFORM",
+            "target_file": "",
+        },
+        "notes": {
+            "rationale": f"fake backend does not support prompt {prompt_name!r}",
+            "risks": ["unsupported_fake_prompt"],
+        },
+    }
 
 
 def call_openai_compatible(
@@ -511,8 +467,8 @@ def build_sample_bundle(sample: dict[str, str]) -> dict[str, Any]:
     test_method = sample_test_method(sample)
     # The editable target method must not include surrounding context. The
     # executor validates action line spans against start_line/end_line, so
-    # leaking nearby enum values or helper code into numbered_code makes the
-    # planner select lines that are visible but intentionally non-editable.
+    # leaking nearby enum values or helper code into numbered_code can make
+    # the LLM select lines that are visible but intentionally non-editable.
     method_info = extract_java_method_info(test_code, test_method, context_lines=0)
     remote_repo = Path(sample.get("remote_repo_dir", ""))
     test_file_repo_relative = ""
@@ -782,48 +738,6 @@ def repo_relative_path(repo_dir: Path, path: Path) -> str:
         return path.name
 
 
-def synthesize_production_declared_methods_sort(sample: dict[str, str]) -> tuple[str, dict[str, Any]] | None:
-    """Guarded production operator for reflection-order ID failures.
-
-    The executor only applies this when the known project pattern is present:
-    TestParameterInjector collects Class#getDeclaredMethods without sorting.
-    """
-    if sample.get("repo_slug") != "google/TestParameterInjector":
-        return None
-    repo_dir = Path(sample.get("remote_repo_dir", ""))
-    if not repo_dir.exists():
-        return None
-    candidates = list(repo_dir.rglob("TestParameterAnnotationMethodProcessor.java"))
-    if not candidates:
-        return None
-    path = candidates[0]
-    original = path.read_text(encoding="utf-8", errors="replace").replace("\r\n", "\n").replace("\r", "\n")
-    if "Arrays.sort(declaredMethods" in original or "java.util.Arrays.sort(declaredMethods" in original:
-        return None
-    needle = "resultBuilder.add(clazz.getDeclaredMethods());"
-    if needle not in original:
-        return None
-    replacement = (
-        "Method[] declaredMethods = clazz.getDeclaredMethods();\n"
-        "      java.util.Arrays.sort(declaredMethods, java.util.Comparator.comparing(Method::getName));\n"
-        "      resultBuilder.add(declaredMethods);"
-    )
-    revised = original.replace(needle, replacement, 1)
-    rel_path = repo_relative_path(repo_dir, path)
-    patch, meta = unified_diff_for_revised(original, revised, rel_path)
-    if not patch.strip() or not meta.get("ok"):
-        return None
-    meta.update(
-        {
-            "mode": "transform_to_unified_diff",
-            "transform": "ID_PRODUCTION_SORT_DECLARED_METHODS",
-            "target_file": rel_path,
-            "guard": "TestParameterAnnotationMethodProcessor.getDeclaredMethods",
-        }
-    )
-    return patch, meta
-
-
 def synthesize_declared_members_sort_by_name(sample: dict[str, str]) -> tuple[str, dict[str, Any]] | None:
     """Generic guarded operator for declaration-order reflection instability.
 
@@ -929,330 +843,6 @@ def synthesize_declared_members_sort_by_name(sample: dict[str, str]) -> tuple[st
             )
             return patch, meta
     return None
-
-
-def synthesize_ormlite_logger_backend_restore(sample: dict[str, str]) -> tuple[str, dict[str, Any]] | None:
-    """Guarded polluter-test operator for ORMLite logger backend OD-Vic failures."""
-    if sample.get("repo_slug") != "j256/ormlite-core":
-        return None
-    repo_dir = Path(sample.get("remote_repo_dir", ""))
-    if not repo_dir.exists():
-        return None
-    path = repo_dir / "src/test/java/com/j256/ormlite/logger/LoggerFactoryTest.java"
-    if not path.exists():
-        return None
-    original = path.read_text(encoding="utf-8", errors="replace").replace("\r\n", "\n").replace("\r", "\n")
-    if "LoggerFactory.setLogBackendFactory(initial)" in original:
-        return None
-    if "class LoggerFactoryTest" not in original or "LoggerFactory.getLogBackendFactory()" not in original:
-        return None
-    revised = original
-    if "import org.junit.jupiter.api.Test;" in revised and "org.junit.jupiter.api.BeforeEach" not in revised:
-        revised = revised.replace(
-            "import org.junit.jupiter.api.Test;\n",
-            "import org.junit.jupiter.api.AfterEach;\nimport org.junit.jupiter.api.BeforeEach;\nimport org.junit.jupiter.api.Test;\n",
-            1,
-        )
-        before_annotation = "BeforeEach"
-        after_annotation = "AfterEach"
-    elif "import org.junit.Test;" in revised and "org.junit.Before" not in revised:
-        revised = revised.replace(
-            "import org.junit.Test;\n",
-            "import org.junit.After;\nimport org.junit.Before;\nimport org.junit.Test;\n",
-            1,
-        )
-        before_annotation = "Before"
-        after_annotation = "After"
-    else:
-        before_annotation = "BeforeEach" if "org.junit.jupiter.api.BeforeEach" in revised else "Before"
-        after_annotation = "AfterEach" if "org.junit.jupiter.api.AfterEach" in revised else "After"
-    class_match = re.search(r"^public\s+class\s+LoggerFactoryTest\s*\{\s*$", revised, flags=re.M)
-    if not class_match:
-        return None
-    insert_at = class_match.end()
-    setup = f"""
-    private LogBackendFactory initial;
-
-    @{before_annotation}
-    public void before() {{
-        initial = LoggerFactory.getLogBackendFactory();
-    }}
-
-    @{after_annotation}
-    public void after() {{
-        LoggerFactory.setLogBackendFactory(initial);
-    }}
-"""
-    revised = revised[:insert_at] + setup + revised[insert_at:]
-    rel_path = repo_relative_path(repo_dir, path)
-    patch, meta = unified_diff_for_revised(original, revised, rel_path)
-    if not patch.strip() or not meta.get("ok"):
-        return None
-    meta.update(
-        {
-            "mode": "transform_to_unified_diff",
-            "transform": "OD_VIC_ORMLITE_LOGGER_BACKEND_RESTORE",
-            "target_file": rel_path,
-            "guard": "LoggerFactoryTest restores LogBackendFactory",
-        }
-    )
-    return patch, meta
-
-
-def synthesize_commons_collections_unordered_iteration(
-    original: str,
-    rel_path: str,
-    sample: dict[str, str],
-) -> tuple[str, dict[str, Any]] | None:
-    if sample.get("repo_slug") != "apache/commons-collections":
-        return None
-    if not any(segment in rel_path for segment in ["/bag/", "/multiset/", "/set/", "/multimap/"]):
-        return None
-    if "getIterationBehaviour()" in original:
-        return None
-    if "extends Abstract" not in original:
-        return None
-    if not re.search(r"extends\s+Abstract(?:Bag|MultiSet|Set|MultiValuedMap|Map|Collection)", original):
-        return None
-    method = """    @Override
-    protected int getIterationBehaviour() {
-        return UNORDERED;
-    }"""
-    patch, meta = synthesize_class_setup_method(original, method, rel_path, "getIterationBehaviour()")
-    if not patch.strip() or not meta.get("ok"):
-        return None
-    meta.update(
-        {
-            "transform": "ID_COLLECTIONS_UNORDERED_ITERATION_BEHAVIOUR",
-            "guard": "commons-collections inherited collection iteration test",
-        }
-    )
-    return patch, meta
-
-
-def synthesize_commons_lang_reflection_field_sort(sample: dict[str, str]) -> tuple[str, dict[str, Any]] | None:
-    if sample.get("repo_slug") != "apache/commons-lang":
-        return None
-    repo_dir = Path(sample.get("remote_repo_dir", ""))
-    if not repo_dir.exists():
-        return None
-    path = repo_dir / "src/main/java/org/apache/commons/lang3/builder/HashCodeBuilder.java"
-    if not path.exists():
-        return None
-    original = path.read_text(encoding="utf-8", errors="replace").replace("\r\n", "\n").replace("\r", "\n")
-    if "Arrays.sort(fields" in original or "java.util.Arrays.sort(fields" in original:
-        return None
-    needle = "final Field[] fields = clazz.getDeclaredFields();"
-    if needle not in original:
-        return None
-    revised = original.replace(
-        needle,
-        needle + "\n            java.util.Arrays.sort(fields, java.util.Comparator.comparing(Field::getName));",
-        1,
-    )
-    test_path = repo_dir / "src/test/java/org/apache/commons/lang3/builder/HashCodeBuilderTest.java"
-    if test_path.exists():
-        test_original = test_path.read_text(encoding="utf-8", errors="replace").replace("\r\n", "\n").replace("\r", "\n")
-        test_revised = test_original.replace(
-            "((17 * 37 + 1) * 37 + 2) * 37 + 3",
-            "((17 * 37 + 1) * 37 + 3) * 37 + 2",
-        )
-    else:
-        test_original = ""
-        test_revised = ""
-    rel_path = repo_relative_path(repo_dir, path)
-    patch, meta = unified_diff_for_revised(original, revised, rel_path)
-    if test_original and test_revised != test_original:
-        test_rel_path = repo_relative_path(repo_dir, test_path)
-        test_patch, test_meta = unified_diff_for_revised(test_original, test_revised, test_rel_path)
-        if test_patch.strip() and test_meta.get("ok"):
-            patch = patch.rstrip() + "\n" + test_patch
-    if not patch.strip() or not meta.get("ok"):
-        return None
-    meta.update(
-        {
-            "mode": "transform_to_unified_diff",
-            "transform": "ID_COMMONS_LANG_SORT_REFLECTION_FIELDS",
-            "target_file": rel_path,
-            "guard": "HashCodeBuilder reflectionAppend sorts declared fields",
-        }
-    )
-    return patch, meta
-
-
-def synthesize_innodb_field_ordinal_annotations(sample: dict[str, str]) -> tuple[str, dict[str, Any]] | None:
-    if sample.get("repo_slug") != "alibaba/innodb-java-reader":
-        return None
-    repo_dir = Path(sample.get("remote_repo_dir", ""))
-    if not repo_dir.exists():
-        return None
-    path = repo_dir / "innodb-java-reader/src/test/java/com/alibaba/innodb/java/reader/AbstractTest.java"
-    if not path.exists():
-        return None
-    original = path.read_text(encoding="utf-8", errors="replace").replace("\r\n", "\n").replace("\r", "\n")
-    if "@interface Ordinal" in original:
-        return None
-    required_fields = [
-        "public final int id;",
-        "public final long empno;",
-        "public final String name;",
-        "public final int deptno;",
-        "public final String gender;",
-        "public final String birthdate;",
-        "public final String city;",
-        "public final int salary;",
-        "public final int age;",
-        "public final String joindate;",
-    ]
-    if not all(field in original for field in required_fields):
-        return None
-    revised = original
-    if "import java.lang.annotation.Retention;" not in revised:
-        revised = revised.replace(
-            "import java.io.InputStream;\n",
-            "import java.io.InputStream;\nimport java.lang.annotation.Retention;\nimport java.lang.annotation.RetentionPolicy;\n",
-            1,
-        )
-    marker = "  @Data\n  public static class Employee {"
-    annotation_def = """  @Retention(RetentionPolicy.RUNTIME)
-  public @interface Ordinal {
-    int value();
-  }
-
-"""
-    if marker not in revised:
-        return None
-    revised = revised.replace(marker, annotation_def + marker, 1)
-    replacements = [
-        ("    public final int id;", "    @Ordinal(0)\n    public final int id;"),
-        ("    public final long empno;", "    @Ordinal(1)\n    public final long empno;"),
-        ("    public final String name;", "    @Ordinal(2)\n    public final String name;"),
-        ("    public final int deptno;", "    @Ordinal(3)\n    public final int deptno;"),
-        ("    public final String gender;", "    @Ordinal(4)\n    public final String gender;"),
-        ("    public final String birthdate;", "    @Ordinal(5)\n    public final String birthdate;"),
-        ("    public final String city;", "    @Ordinal(6)\n    public final String city;"),
-        ("    public final int salary;", "    @Ordinal(7)\n    public final int salary;"),
-        ("    public final int age;", "    @Ordinal(8)\n    public final int age;"),
-        ("    public final String joindate;", "    @Ordinal(9)\n    public final String joindate;"),
-        ("    public final int level;", "    @Ordinal(10)\n    public final int level;"),
-        ("    public final String profile;", "    @Ordinal(11)\n    public final String profile;"),
-        ("    public final String address;", "    @Ordinal(12)\n    public final String address;"),
-        ("    public final String email;", "    @Ordinal(13)\n    public final String email;"),
-        ("    public final int deptno;", "    @Ordinal(0)\n    public final int deptno;"),
-    ]
-    for old, new in replacements[:-1]:
-        revised = revised.replace(old, new, 1)
-    department_marker = "  @Data\n  public static class Department {"
-    if department_marker in revised:
-        department_start = revised.index(department_marker)
-        before = revised[:department_start]
-        after = revised[department_start:]
-        after = after.replace("    public final int deptno;", "    @Ordinal(0)\n    public final int deptno;", 1)
-        after = after.replace("    public final String name;", "    @Ordinal(1)\n    public final String name;", 1)
-        revised = before + after
-    rel_path = repo_relative_path(repo_dir, path)
-    patch, meta = unified_diff_for_revised(original, revised, rel_path)
-    if not patch.strip() or not meta.get("ok"):
-        return None
-    meta.update(
-        {
-            "mode": "transform_to_unified_diff",
-            "transform": "ID_INNODB_FIELD_ORDINAL_ANNOTATIONS",
-            "target_file": rel_path,
-            "guard": "AbstractTest Employee/Department fields receive Ordinal annotations",
-        }
-    )
-    return patch, meta
-
-
-def synthesize_okta_jsonassert_nonstrict(sample: dict[str, str]) -> tuple[str, dict[str, Any]] | None:
-    if sample.get("repo_slug") != "okta/okta-hooks-sdk-java":
-        return None
-    repo_dir = Path(sample.get("remote_repo_dir", ""))
-    if not repo_dir.exists():
-        return None
-    support_path = repo_dir / "hooks/src/test/groovy/com/okta/hooks/sdk/HooksSupport.groovy"
-    test_path = find_test_file(sample)
-    if not support_path.exists() or not test_path or not test_path.exists():
-        return None
-    support_original = support_path.read_text(encoding="utf-8", errors="replace").replace("\r\n", "\n").replace("\r", "\n")
-    test_original = test_path.read_text(encoding="utf-8", errors="replace").replace("\r\n", "\n").replace("\r", "\n")
-    if "assertJsonEqualsNonStrict" in test_original:
-        return None
-    support_revised = support_original
-    if "new JsonSlurper()" not in support_revised:
-        support_revised = support_revised.replace(
-            "package com.okta.hooks.sdk\n\n",
-            "package com.okta.hooks.sdk\n\nimport groovy.json.JsonSlurper\n\n",
-            1,
-        )
-        support_revised = support_revised.replace(
-            "trait HooksSupport {\n",
-            """trait HooksSupport {
-
-    void assertJsonEqualsNonStrict(def actual, def expected) {
-        def slurper = new JsonSlurper()
-        assert slurper.parseText(actual) == slurper.parseText(expected)
-    }
-""",
-            1,
-        )
-    pattern = re.compile(r"assertThat\s+builder\.toString\(\),\s+is\(expectedToString\)")
-    if not pattern.search(test_original):
-        return None
-    test_revised = pattern.sub("assertJsonEqualsNonStrict builder.toString(), expectedToString", test_original)
-    support_patch, support_meta = unified_diff_for_revised(
-        support_original,
-        support_revised,
-        repo_relative_path(repo_dir, support_path),
-    )
-    test_patch, test_meta = unified_diff_for_revised(
-        test_original,
-        test_revised,
-        repo_relative_path(repo_dir, test_path),
-    )
-    if not support_patch.strip() or not support_meta.get("ok") or not test_patch.strip() or not test_meta.get("ok"):
-        return None
-    patch = support_patch.rstrip() + "\n" + test_patch
-    return patch, {
-        "ok": True,
-        "mode": "transform_to_unified_diff",
-        "transform": "ID_OKTA_JSONASSERT_NONSTRICT",
-        "target_file": repo_relative_path(repo_dir, test_path),
-        "support_file": repo_relative_path(repo_dir, support_path),
-        "guard": "Okta Hooks Groovy builder JSON string comparison",
-    }
-
-
-def synthesize_jnr_restore_path_env(sample: dict[str, str]) -> tuple[str, dict[str, Any]] | None:
-    if sample.get("repo_slug") != "jnr/jnr-posix":
-        return None
-    repo_dir = Path(sample.get("remote_repo_dir", ""))
-    if not repo_dir.exists():
-        return None
-    path = repo_dir / "src/test/java/jnr/posix/EnvTest.java"
-    if not path.exists():
-        return None
-    original = path.read_text(encoding="utf-8", errors="replace").replace("\r\n", "\n").replace("\r", "\n")
-    if 'posix.setenv("PATH", path, 1);' in original:
-        return None
-    needle = 'assertNotEquals(path, posix.getenv("PATH"));'
-    if needle not in original or 'String path = posix.getenv("PATH");' not in original:
-        return None
-    revised = original.replace(needle, needle + '\n            posix.setenv("PATH", path, 1);', 1)
-    rel_path = repo_relative_path(repo_dir, path)
-    patch, meta = unified_diff_for_revised(original, revised, rel_path)
-    if not patch.strip() or not meta.get("ok"):
-        return None
-    meta.update(
-        {
-            "mode": "transform_to_unified_diff",
-            "transform": "OD_JNR_RESTORE_PATH_ENV",
-            "target_file": rel_path,
-            "guard": "jnr-posix EnvTest restores PATH after setenv overwrite",
-        }
-    )
-    return patch, meta
 
 
 def synthesize_env_restore_after_mutation(
@@ -2545,99 +2135,6 @@ def json_assert_wrapper_for_method(
     return None, None
 
 
-def infer_safe_transform_fallback(
-    sample: dict[str, str],
-    original: str,
-    rel_path: str,
-    action: dict[str, Any] | None = None,
-    failure: dict[str, Any] | None = None,
-) -> tuple[str, dict[str, Any]] | None:
-    """Deprecated historical fallback.
-
-    StabilityOps now requires the LLM to instantiate an explicit typed DSL
-    operator. The executor must not silently replace a rejected or failed action
-    with a different transform, because that blurs the paper's core boundary
-    between semantic planning and deterministic operator execution.
-    """
-    return None
-
-    category = str(sample.get("PrimaryCategory") or sample.get("Category") or "").strip().upper()
-    if category == "ID":
-        okta_jsonassert = synthesize_okta_jsonassert_nonstrict(sample)
-        if okta_jsonassert:
-            return okta_jsonassert
-        fastjson_method_asserts = synthesize_fastjson_method_json_asserts(original, sample, rel_path)
-        if fastjson_method_asserts:
-            return fastjson_method_asserts
-        commons_collections = synthesize_commons_collections_unordered_iteration(original, rel_path, sample)
-        if commons_collections:
-            return commons_collections
-        commons_lang = synthesize_commons_lang_reflection_field_sort(sample)
-        if commons_lang:
-            return commons_lang
-        innodb_ordinals = synthesize_innodb_field_ordinal_annotations(sample)
-        if innodb_ordinals:
-            return innodb_ordinals
-        production_sort = synthesize_production_declared_methods_sort(sample)
-        if production_sort:
-            return production_sort
-    if category == "OD-VIC":
-        logger_restore = synthesize_ormlite_logger_backend_restore(sample)
-        if logger_restore:
-            return logger_restore
-    if category == "OD":
-        jnr_restore = synthesize_jnr_restore_path_env(sample)
-        if jnr_restore:
-            return jnr_restore
-    if category != "OD-VIC":
-        return None
-
-    method_start, method_end = method_bounds_for_sample(original, sample)
-    if not method_start or not method_end:
-        return None
-    method_text = "\n".join(original.splitlines()[int(method_start) - 1 : int(method_end)])
-    has_zk_receiver = re.search(r"\bzkRegCenter\b", method_text) is not None
-    has_sequential_path = re.search(r'"/sequential(?:/[^"]*)?"', method_text) is not None
-    has_zk_read_or_write = any(
-        token in method_text
-        for token in [
-            ".persistEphemeralSequential(",
-            ".persistSequential(",
-            ".getChildren().forPath(",
-            ".isExisted(",
-        ]
-    )
-    if not (has_zk_receiver and has_sequential_path and has_zk_read_or_write):
-        return None
-
-    action = {
-        "transform": "OD_VIC_RESOURCE_REMOVE_PATH",
-        "target_file": rel_path,
-        "insert_after_line": method_open_line(original, sample),
-        "receiver": "zkRegCenter",
-        "path": "/sequential",
-    }
-    patch, meta = synthesize_insert_statement_after_line(
-        original,
-        sample,
-        action,
-        rel_path,
-        "OD_VIC_RESOURCE_REMOVE_PATH",
-        'zkRegCenter.remove("/sequential");',
-    )
-    if not patch.strip() or not meta.get("ok"):
-        return None
-    meta.update(
-        {
-            "fallback": True,
-            "fallback_reason": "od_vic_zookeeper_sequential_residue",
-            "receiver": "zkRegCenter",
-            "path": "/sequential",
-        }
-    )
-    return patch, meta
-
-
 def patch_from_transform_action(sample: dict[str, str], repair_json: dict[str, Any]) -> tuple[str, dict[str, Any]]:
     """Synthesize a patch from a restricted repair transform selected by the LLM."""
     action = repair_json.get("transform_action") or repair_json.get("repair_transform") or {}
@@ -2673,17 +2170,8 @@ def patch_from_transform_action(sample: dict[str, str], repair_json: dict[str, A
     rel_path = target_file or test_path.name
 
     explicit_sample_transforms = {
-        "ID_COLLECTIONS_UNORDERED_ITERATION_BEHAVIOUR": lambda: synthesize_commons_collections_unordered_iteration(
-            original, rel_path, sample
-        ),
-        "ID_COMMONS_LANG_SORT_REFLECTION_FIELDS": lambda: synthesize_commons_lang_reflection_field_sort(sample),
         "ID_FASTJSON_METHOD_JSON_ASSERTS": lambda: synthesize_fastjson_method_json_asserts(original, sample, rel_path),
-        "ID_INNODB_FIELD_ORDINAL_ANNOTATIONS": lambda: synthesize_innodb_field_ordinal_annotations(sample),
-        "ID_OKTA_JSONASSERT_NONSTRICT": lambda: synthesize_okta_jsonassert_nonstrict(sample),
-        "ID_PRODUCTION_SORT_DECLARED_METHODS": lambda: synthesize_production_declared_methods_sort(sample),
         "ID_SORT_DECLARED_MEMBERS_BY_NAME": lambda: synthesize_declared_members_sort_by_name(sample),
-        "OD_JNR_RESTORE_PATH_ENV": lambda: synthesize_jnr_restore_path_env(sample),
-        "OD_VIC_ORMLITE_LOGGER_BACKEND_RESTORE": lambda: synthesize_ormlite_logger_backend_restore(sample),
     }
     if transform in explicit_sample_transforms:
         generated = explicit_sample_transforms[transform]()
@@ -2773,97 +2261,27 @@ def patch_from_transform_action(sample: dict[str, str], repair_json: dict[str, A
         patch, meta = synthesize_ormlite_drop_table_before(original, sample, action, rel_path)
         if meta.get("ok"):
             meta["transform"] = "OD_VIC_ORMLITE_TABLE_CLEANUP"
-        if not meta.get("ok"):
-            fallback = infer_safe_transform_fallback(sample, original, rel_path, action=action, failure=meta)
-            if fallback:
-                patch, fallback_meta = fallback
-                fallback_meta.update(
-                    {
-                        "original_transform": transform,
-                        "original_error_class": meta.get("error_class"),
-                        "original_error": meta.get("error"),
-                    }
-                )
-                return patch, fallback_meta
         return patch, meta
 
-    if transform in {"OD_RESTORE_ENV_AFTER_MUTATION", "OD_JNR_RESTORE_PATH_ENV"}:
+    if transform == "OD_RESTORE_ENV_AFTER_MUTATION":
         return synthesize_env_restore_after_mutation(original, sample, action, rel_path)
 
     if transform == "OD_VIC_SCHEMA_DROP_AFTER":
         patch, meta = synthesize_schema_cleanup_after_assert(original, sample, action, rel_path)
         if patch.strip() or meta.get("ok"):
             return patch, meta
-        if meta.get("error_class") in {"schema_class_not_visible", "schema_expr_not_class_literal", "schema_utils_not_visible"}:
-            fallback_patch, fallback_meta = synthesize_ormlite_drop_table_before(original, sample, action, rel_path)
-            if fallback_patch.strip() and fallback_meta.get("ok"):
-                fallback_meta.update(
-                    {
-                        "original_transform": "OD_VIC_SCHEMA_DROP_AFTER",
-                        "original_error_class": meta.get("error_class"),
-                        "original_error": meta.get("error"),
-                    }
-                )
-                return fallback_patch, fallback_meta
-        fallback = infer_safe_transform_fallback(sample, original, rel_path, action=action, failure=meta)
-        if fallback:
-            patch, fallback_meta = fallback
-            fallback_meta.update(
-                {
-                    "original_transform": transform,
-                    "original_error_class": meta.get("error_class"),
-                    "original_error": meta.get("error"),
-                }
-            )
-            return patch, fallback_meta
         return patch, meta
 
     if transform == "NIO_STATIC_FIELD_RESET":
         patch, meta = synthesize_static_field_reset(original, sample, action, rel_path)
-        if not meta.get("ok"):
-            fallback = infer_safe_transform_fallback(sample, original, rel_path, action=action, failure=meta)
-            if fallback:
-                patch, fallback_meta = fallback
-                fallback_meta.update(
-                    {
-                        "original_transform": transform,
-                        "original_error_class": meta.get("error_class"),
-                        "original_error": meta.get("error"),
-                    }
-                )
-                return patch, fallback_meta
         return patch, meta
 
     if transform == "NIO_STATIC_FIELD_RESET_INFER":
         patch, meta = synthesize_static_field_reset_infer(original, sample, action, rel_path)
-        if not meta.get("ok"):
-            fallback = infer_safe_transform_fallback(sample, original, rel_path, action=action, failure=meta)
-            if fallback:
-                patch, fallback_meta = fallback
-                fallback_meta.update(
-                    {
-                        "original_transform": transform,
-                        "original_error_class": meta.get("error_class"),
-                        "original_error": meta.get("error"),
-                    }
-                )
-                return patch, fallback_meta
         return patch, meta
 
     if transform == "ID_SORT_REFLECTION_RESULTS":
         patch, meta = synthesize_reflection_sort(original, sample, action, rel_path)
-        if not meta.get("ok"):
-            fallback = infer_safe_transform_fallback(sample, original, rel_path, action=action, failure=meta)
-            if fallback:
-                patch, fallback_meta = fallback
-                fallback_meta.update(
-                    {
-                        "original_transform": transform,
-                        "original_error_class": meta.get("error_class"),
-                        "original_error": meta.get("error"),
-                    }
-                )
-                return patch, fallback_meta
         return patch, meta
 
     if transform in {"OD_RESOURCE_REMOVE_PATH", "OD_VIC_RESOURCE_REMOVE_PATH"}:
@@ -2894,18 +2312,6 @@ def patch_from_transform_action(sample: dict[str, str], repair_json: dict[str, A
         statement = f"{receiver}.remove({java_string_literal(path_value)});"
         action["insert_after_line"] = insert_after
         patch, meta = synthesize_insert_statement_after_line(original, sample, action, rel_path, transform, statement)
-        if not meta.get("ok"):
-            fallback = infer_safe_transform_fallback(sample, original, rel_path, action=action, failure=meta)
-            if fallback:
-                patch, fallback_meta = fallback
-                fallback_meta.update(
-                    {
-                        "original_transform": transform,
-                        "original_error_class": meta.get("error_class"),
-                        "original_error": meta.get("error"),
-                    }
-                )
-                return patch, fallback_meta
         return patch, meta
 
     if transform == "ID_JSON_MISSING_TYPE_SETTER":
@@ -2956,23 +2362,6 @@ def patch_from_transform_action(sample: dict[str, str], repair_json: dict[str, A
             method_start, method_end = inferred_start, inferred_end
     span_error = validate_line_span(span_start, span_end, method_start, method_end)
     if span_error:
-        fallback = infer_safe_transform_fallback(
-            sample,
-            original,
-            rel_path,
-            action=action,
-            failure={"ok": False, "error_class": "line_span_outside_target_method", "error": span_error},
-        )
-        if fallback:
-            patch, fallback_meta = fallback
-            fallback_meta.update(
-                {
-                    "original_transform": transform,
-                    "original_error_class": "line_span_outside_target_method",
-                    "original_error": span_error,
-                }
-            )
-            return patch, fallback_meta
         return "", {"ok": False, "error_class": "line_span_outside_target_method", "error": span_error}
     selected_lines = lines_plain[int(span_start) - 1 : int(span_end)]
     old_block = "".join(lines_keepends[int(span_start) - 1 : int(span_end)])
@@ -3020,17 +2409,6 @@ def patch_from_transform_action(sample: dict[str, str], repair_json: dict[str, A
     else:
         return "", {"ok": False, "error_class": "unsupported_transform", "error": transform}
     if not meta.get("ok"):
-        fallback = infer_safe_transform_fallback(sample, original, rel_path, action=action, failure=meta)
-        if fallback:
-            patch, fallback_meta = fallback
-            fallback_meta.update(
-                {
-                    "original_transform": transform,
-                    "original_error_class": meta.get("error_class"),
-                    "original_error": meta.get("error"),
-                }
-            )
-            return patch, fallback_meta
         return "", meta
 
     new_block = "\n".join(new_lines)

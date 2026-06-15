@@ -1,6 +1,6 @@
-# Transform Action Revision Prompt
+# StabilityOps Typed Action Revision Prompt
 
-You are the Transform Action Revision Agent.
+You are the StabilityOps bounded action revision component.
 
 The StabilityOps executor rejected the previous typed repair action. Your task is to revise the typed `transform_action` so that it satisfies the executor guard, or return `NO_SAFE_TRANSFORM` if no guarded operator applies.
 
@@ -65,7 +65,7 @@ Revision rules:
 Inputs:
 
 - `sample`: target test and selected context.
-- `stability_specification`: previous stability invariant, if any.
+- `stability_spec`: previous stability invariant, if any.
 - `context_plan` and `context_snippets`: additional visible evidence.
 - `original_repair_json`: previous planner output.
 - `executor_rejection`: deterministic executor rejection and reason.

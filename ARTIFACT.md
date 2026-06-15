@@ -8,7 +8,7 @@ StabilityOps evaluates **known flaky-test repair**. The input is a known flaky t
 
 The released artifact includes:
 
-- StabilityOps source code and prompts;
+- StabilityOps source code and the default typed-action prompt;
 - an executable IDoFT-derived metadata subset with 721 repair candidates;
 - scripts for preparing third-party repositories from metadata;
 - a Qwen3/vLLM runner that can download the model automatically;
@@ -21,8 +21,13 @@ The released artifact does not include:
 - HuggingFace model weights;
 - Maven dependency caches;
 - generated experiment outputs.
+- developer patch diffs as repair inputs.
 
 Those artifacts are created under ignored local directories when the runner is executed.
+
+The default preparation and repair path uses only pre-fix information. Developer/PR patches are not downloaded unless `scripts/prepare_idoft_samples.py` is invoked with `--download-developer-patches`, and that flag is intended only for offline evaluation analyses, not for repair prompts or patch generation.
+
+The default public configuration uses `prompts/stabilityops_typed_action.md` to ask the LLM for a typed StabilityOps DSL action. Deterministic code performs context retrieval, guarded action execution, patch safety filtering, and validation. The optional `prompts/stabilityops_action_revision.md` prompt is included only for bounded retry experiments and is disabled by default.
 
 ## 2. Hardware and Software Requirements
 
@@ -161,6 +166,8 @@ python3 -u scripts/prepare_idoft_samples.py \
   --output-jsonl runs/prepare_idoft_samples.jsonl \
   --limit 20
 ```
+
+The command above does not download developer patches. If a researcher wants to reproduce separate developer-patch similarity analyses, they must explicitly add `--download-developer-patches`; those artifacts remain excluded from StabilityOps prompts and executor inputs.
 
 ## 6. Result Evaluation
 

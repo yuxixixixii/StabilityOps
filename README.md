@@ -19,17 +19,19 @@ The claim is intentionally narrow: StabilityOps studies safer, more diagnosable 
 
 This repository is intended to be directly usable after cloning.
 
-- `stability_agent/`: StabilityOps runtime, guarded executor, DSL operators, safety checks, and validation.
-- `scripts/run_agent_experiment.py`: experiment orchestrator.
+- `stabilityops/`: StabilityOps runtime, guarded executor, DSL operators, safety checks, and validation.
+- `scripts/run_stabilityops_experiment.py`: StabilityOps-only experiment runner.
 - `scripts/run_stabilityops_qwen3.sh`: one-command Qwen3/vLLM runner with automatic model download.
 - `scripts/download_hf_model.py`: explicit HuggingFace snapshot downloader.
 - `scripts/setup_maven.sh`: automatic Apache Maven 3.8.8 setup for Java/Maven validation.
+- `prompts/stabilityops_typed_action.md`: the default LLM prompt for producing typed StabilityOps DSL actions.
+- `prompts/stabilityops_action_revision.md`: optional bounded action-revision prompt, used only when enabled in the config.
 - `configs/stabilityops_qwen3_public_full721.json`: full 721-sample configuration.
 - `configs/stabilityops_qwen3_public_smoke.json`: small 5-sample smoke configuration.
 - `data/metadata/idoft_verified_feasible.csv`: the 721-sample executable IDoFT-derived metadata subset.
 - `data/metadata/subsets/idoft_verified_feasible_balanced_10_each.csv`: a smaller balanced subset.
 - `ARTIFACT.md`: artifact-oriented reproduction guide.
-- `docs/idoft_executable_subset_report.md`: how the executable metadata subset was constructed.
+- `docs/stabilityops_dataset_card.md`: scope and reproduction notes for the released metadata subset.
 
 Large generated artifacts are intentionally not tracked: cloned repositories, Maven worktrees, HuggingFace model weights, local patch caches, and experiment outputs.
 
@@ -179,6 +181,18 @@ Most users should start with the smoke run before launching the full experiment.
 
 More detailed artifact instructions are in `ARTIFACT.md`.
 
+## Prompts Used by Default
+
+The public StabilityOps configuration uses one LLM prompt per repair attempt:
+
+```text
+prompts/stabilityops_typed_action.md
+```
+
+That prompt asks the LLM to output a typed StabilityOps DSL action, not a free-form patch. Context retrieval, schema checks, operator guards, patch materialization, safety filtering, and rerun validation are handled by deterministic code.
+
+`prompts/stabilityops_action_revision.md` is included for optional bounded retry experiments. It is disabled in the default public configs (`transform_action_repair_attempts: 0`).
+
 ## Dataset Notes
 
 The released metadata file is:
@@ -187,7 +201,9 @@ The released metadata file is:
 data/metadata/idoft_verified_feasible.csv
 ```
 
-It contains 721 IDoFT-derived repair candidates that were executable under our Java 8 + Maven 3.8.8 screening protocol. Each row records repository URL, detected SHA, module path, fully-qualified test name, flaky category, PR link, validation metadata, and cache-relative paths used by our local experiments.
+It contains 721 IDoFT-derived repair candidates that were executable under our Java 8 + Maven 3.8.8 screening protocol. Each released row records repository URL, detected SHA, module path, fully-qualified test name, flaky category, and validation metadata needed to rebuild and execute the sample.
+
+The public StabilityOps runner uses only pre-fix information: repository URL, detected SHA, module path, target test, known category, and local execution metadata. It does **not** load developer patches, PR patch diffs, or post-fix code into prompts or repair execution. `scripts/prepare_idoft_samples.py` also skips developer patch downloads by default; pass `--download-developer-patches` only for separate evaluation-only analyses.
 
 Important boundary:
 
@@ -196,11 +212,12 @@ Important boundary:
 - The one-command runner clones/checks out the listed GitHub repositories by default.
 - Users only need to run `scripts/prepare_idoft_samples.py` manually if they want to rebuild worktrees separately.
 - The subset is not a claim that every test's pre-fix flaky behavior is re-reproduced; it is an executable known-flaky repair-candidate subset.
+- PR/developer patch fields are excluded from the clean public metadata distributed by `scripts/package_release.sh`.
 
 The construction protocol is documented in:
 
 ```text
-docs/idoft_executable_subset_report.md
+docs/stabilityops_dataset_card.md
 ```
 
 ## Outputs

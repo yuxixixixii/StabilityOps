@@ -2,12 +2,9 @@
   "dataset": "data/metadata/idoft_verified_feasible.csv",
   "output_root": "runs/experiments",
   "prompts_dir": "prompts",
-  "agent_context_mode": "targeted",
   "repair_output_mode": "transform",
-  "skip_intent_agents": true,
   "full_patch_repair_attempts": 0,
   "transform_action_repair_attempts": 0,
-  "use_validation_summary_agent": false,
   "methods": [
     "stabilityops_dsl"
   ],

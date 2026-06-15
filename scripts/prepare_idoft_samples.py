@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
-"""Prepare IDoFT samples by cloning, checking out commits, locating tests, and downloading PR patches."""
+"""Prepare IDoFT samples by cloning, checking out commits, and locating tests.
+
+Developer patches are evaluation-only artifacts. They are not downloaded by
+default because the repair pipeline must run only on pre-fix information.
+"""
 
 from __future__ import annotations
 
@@ -45,7 +49,7 @@ def load_rows(path: Path, limit: int | None) -> list[dict[str, str]]:
 
 def download(url: str, path: Path, timeout: int = 120) -> tuple[bool, str]:
     path.parent.mkdir(parents=True, exist_ok=True)
-    req = Request(url, headers={"User-Agent": "StabilityOps-DSL"})
+    req = Request(url)
     try:
         with urlopen(req, timeout=timeout) as response:
             data = response.read()
@@ -101,9 +105,7 @@ def prepare_row(row: dict[str, str], args: argparse.Namespace, index: int, total
         "module_path": module_path,
         "test_identifier": row.get(TEST_FIELD, ""),
         "primary_category": row.get("PrimaryCategory", row.get("Category", "")),
-        "pr_link": row.get("PR Link", ""),
         "repo_dir": str(repo_dir),
-        "patch_path": str(patch_path),
     }
 
     if not repo_dir.exists():
@@ -149,28 +151,35 @@ def prepare_row(row: dict[str, str], args: argparse.Namespace, index: int, total
     result["test_file_candidates"] = [str(path) for path in test_paths[:10]]
 
     patch_url = row.get("PR Link", "").rstrip("/") + ".patch" if row.get("PR Link", "").strip() else ""
-    result["patch_url"] = patch_url
-    cached_patch = args.patch_cache_dir / f"{sample_id}.patch" if args.patch_cache_dir else None
-    if cached_patch and cached_patch.exists():
-        patch_path.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(cached_patch, patch_path)
-        result["patch_download_ok"] = True
-        result["patch_download_message"] = f"copied from patch cache: {cached_patch}"
-        result["patch_touches_test"] = patch_touches_test(patch_path)
-    elif patch_url and not args.no_network:
-        print(f"[{index}/{total}] {sample_id} download patch {patch_url}", flush=True)
-        ok, msg = download(patch_url, patch_path, timeout=args.download_timeout)
-        result["patch_download_ok"] = ok
-        result["patch_download_message"] = msg
-        result["patch_touches_test"] = patch_touches_test(patch_path)
-    elif patch_url and args.no_network:
-        result["patch_download_ok"] = False
-        result["patch_download_message"] = "patch download skipped by --no-network and patch cache missing"
-        result["patch_touches_test"] = False
+    if args.download_developer_patches:
+        result["developer_patch_url"] = patch_url
+        result["developer_patch_path"] = str(patch_path)
+        cached_patch = args.patch_cache_dir / f"{sample_id}.patch" if args.patch_cache_dir else None
+        if cached_patch and cached_patch.exists():
+            patch_path.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(cached_patch, patch_path)
+            result["developer_patch_download_ok"] = True
+            result["developer_patch_download_message"] = f"copied from patch cache: {cached_patch}"
+            result["developer_patch_touches_test"] = patch_touches_test(patch_path)
+        elif patch_url and not args.no_network:
+            print(f"[{index}/{total}] {sample_id} download developer patch {patch_url}", flush=True)
+            ok, msg = download(patch_url, patch_path, timeout=args.download_timeout)
+            result["developer_patch_download_ok"] = ok
+            result["developer_patch_download_message"] = msg
+            result["developer_patch_touches_test"] = patch_touches_test(patch_path)
+        elif patch_url and args.no_network:
+            result["developer_patch_download_ok"] = False
+            result["developer_patch_download_message"] = "developer patch download skipped by --no-network and cache missing"
+            result["developer_patch_touches_test"] = False
+        else:
+            result["developer_patch_download_ok"] = False
+            result["developer_patch_download_message"] = "missing PR link"
+            result["developer_patch_touches_test"] = False
     else:
-        result["patch_download_ok"] = False
-        result["patch_download_message"] = "missing PR link"
-        result["patch_touches_test"] = False
+        result["developer_patch_download_ok"] = False
+        result["developer_patch_download_message"] = (
+            "skipped; pass --download-developer-patches for evaluation-only artifacts"
+        )
 
     result["elapsed_seconds"] = round(time.time() - started, 2)
     return result
@@ -190,6 +199,11 @@ def main() -> None:
     parser.add_argument("--clone-timeout", type=int, default=900)
     parser.add_argument("--git-timeout", type=int, default=300)
     parser.add_argument("--download-timeout", type=int, default=120)
+    parser.add_argument(
+        "--download-developer-patches",
+        action="store_true",
+        help="Download PR/developer patches for offline evaluation only. Never use these artifacts in repair prompts.",
+    )
     args = parser.parse_args()
 
     rows = load_rows(args.metadata, args.limit)
@@ -208,7 +222,7 @@ def main() -> None:
             }
         append_jsonl(args.output_jsonl, result)
         print(
-            "[{}/{}] {} clone={} checkout={} module={} test_file={} patch={} touches_test={} error={}".format(
+            "[{}/{}] {} clone={} checkout={} module={} test_file={} developer_patch={} touches_test={} error={}".format(
                 index,
                 total,
                 result.get("sample_id"),
@@ -216,8 +230,8 @@ def main() -> None:
                 result.get("checkout_ok"),
                 result.get("module_exists"),
                 result.get("test_file_found"),
-                result.get("patch_download_ok"),
-                result.get("patch_touches_test"),
+                result.get("developer_patch_download_ok"),
+                result.get("developer_patch_touches_test", False),
                 result.get("error", ""),
             ),
             flush=True,

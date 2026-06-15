@@ -5,6 +5,7 @@ GPU_ID="${1:-}"
 RUN_ID="${2:-stabilityops_qwen3_transform_smoke}"
 EXPERIMENT_CONFIG="${3:-configs/stabilityops_typed_dsl_affected_smoke5_qwen3.json}"
 RUN_RESUME="${RUN_RESUME:-0}"
+RUNNER_SCRIPT="${RUNNER_SCRIPT:-scripts/run_stabilityops_experiment.py}"
 
 if [[ -z "$GPU_ID" ]]; then
   echo "usage: bash scripts/run_qwen3_transform_gpu.sh <gpu_id> [run_id] [experiment_config]" >&2
@@ -87,7 +88,7 @@ if [[ -n "${RUN_VALIDATION_WORKERS:-}" ]]; then
   RUN_AGENT_EXTRA_ARGS+=(--validation-workers "$RUN_VALIDATION_WORKERS")
 fi
 
-python3 -u scripts/run_agent_experiment.py \
+python3 -u "$RUNNER_SCRIPT" \
   --config "$EXPERIMENT_CONFIG" \
   --run-id "$RUN_ID" \
   "${RUN_AGENT_EXTRA_ARGS[@]}" \

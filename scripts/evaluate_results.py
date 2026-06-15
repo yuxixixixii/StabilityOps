@@ -46,7 +46,6 @@ def aggregate_llm_usage(row: dict[str, Any]) -> dict[str, float]:
     usage_keys = [
         "llm_usage",
         "patch_repair_llm_usage",
-        "transform_action_revision_llm_usage",
     ]
     prompt_tokens = 0
     completion_tokens = 0
@@ -78,35 +77,6 @@ def aggregate_llm_usage(row: dict[str, Any]) -> dict[str, float]:
         "total_tokens": total_tokens,
         "elapsed_seconds": elapsed_seconds,
     }
-
-
-def normalize_category(value: Any) -> str:
-    text = str(value or "").strip().lower()
-    aliases = {
-        "implementation-dependent": "id",
-        "implementation dependent": "id",
-        "order-dependent": "od",
-        "order dependent": "od",
-        "non-isolated": "nio",
-        "non isolated": "nio",
-    }
-    return aliases.get(text, text)
-
-
-def first_intent_category(row: dict[str, Any]) -> Any:
-    intent_json = row.get("intent_json")
-    if isinstance(intent_json, dict):
-        intents = intent_json.get("stability_intents") or []
-        if intents and isinstance(intents[0], dict):
-            return intents[0].get("mapped_category")
-    return None
-
-
-def selected_intent_category(row: dict[str, Any]) -> Any:
-    selected = row.get("selected_intent_json")
-    if isinstance(selected, dict):
-        return selected.get("mapped_category")
-    return None
 
 
 def transform_conversion(row: dict[str, Any]) -> dict[str, Any]:
@@ -327,12 +297,6 @@ def summarize(rows: list[dict[str, Any]]) -> dict[str, Any]:
         unsafe_materialized = 0
         consistent_outcome = 0
         consistent_pass = 0
-        intent_labeled = 0
-        intent_correct = 0
-        selected_intent_labeled = 0
-        selected_intent_correct = 0
-        intent_confusion: dict[str, int] = defaultdict(int)
-        selected_intent_confusion: dict[str, int] = defaultdict(int)
         reductions: list[float] = []
 
         total_prompt_tokens = 0
@@ -408,30 +372,6 @@ def summarize(rows: list[dict[str, Any]]) -> dict[str, Any]:
             if reason:
                 rejection_reasons[reason] += 1
 
-            method = str(row.get("method", ""))
-            if method in {"intent_only_repair", "full_stability_intent_agent", "stabilityops_dsl"}:
-                predicted = row.get("predicted_category")
-                if predicted is None:
-                    predicted = first_intent_category(row)
-                selected_predicted = selected_intent_category(row)
-                expected = row.get("expected_category")
-                if expected is None:
-                    expected = row.get("category")
-                if predicted is not None and expected is not None:
-                    intent_labeled += 1
-                    expected_norm = normalize_category(expected)
-                    predicted_norm = normalize_category(predicted)
-                    intent_confusion[f"{expected_norm}->{predicted_norm}"] += 1
-                    if predicted_norm == expected_norm:
-                        intent_correct += 1
-                if selected_predicted is not None and expected is not None:
-                    selected_intent_labeled += 1
-                    expected_norm = normalize_category(expected)
-                    selected_norm = normalize_category(selected_predicted)
-                    selected_intent_confusion[f"{expected_norm}->{selected_norm}"] += 1
-                    if selected_norm == expected_norm:
-                        selected_intent_correct += 1
-
             pre_rate = failure_rate(row.get("pre_fix_failures"), row.get("pre_fix_runs"))
             post_rate = failure_rate(row.get("post_fix_failures"), row.get("post_fix_runs"))
             if pre_rate is not None and post_rate is not None:
@@ -492,10 +432,6 @@ def summarize(rows: list[dict[str, Any]]) -> dict[str, Any]:
                     key=lambda item: (-item[1], item[0]),
                 )
             },
-            "first_intent_accuracy": intent_correct / intent_labeled if intent_labeled else None,
-            "selected_intent_accuracy": selected_intent_correct / selected_intent_labeled if selected_intent_labeled else None,
-            "intent_confusion": dict(sorted(intent_confusion.items())),
-            "selected_intent_confusion": dict(sorted(selected_intent_confusion.items())),
             "mean_failure_rate_reduction": sum(reductions) / len(reductions) if reductions else None,
             "total_llm_calls": total_llm_calls,
             "total_prompt_tokens": total_prompt_tokens,
