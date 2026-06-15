@@ -34,8 +34,6 @@ for path in \
   examples \
   docs/stabilityops_dataset_card.md \
   docs/generated/paper_results_summary.json \
-  docs/generated/patch_safety_filter_examples.md \
-  docs/generated/safety_audit_patches \
   data/metadata/idoft_verified_feasible.csv \
   data/metadata/idoft_verified_feasible.jsonl \
   data/metadata/idoft_verified_feasible_summary.json \

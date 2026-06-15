@@ -243,20 +243,6 @@ python3 scripts/evaluate_results.py \
   --output-json runs/experiments/<run_id>/eval.json
 ```
 
-## Patch Safety
-
-StabilityOps distinguishes three outcomes that free-form repair often conflates:
-
-- pre-materialization refusal: the typed action fails schema/scope/operator guards, so no patch is emitted;
-- post-materialization rejection: a patch exists but fails the Patch Safety Filter;
-- validation failure: the patch is safe enough to test but fails target run or rerun validation.
-
-Representative unsafe or invalid free-form patch examples are documented in:
-
-```text
-docs/generated/patch_safety_filter_examples.md
-```
-
 ## Packaging a Clean Release
 
 Create a clean archive that excludes local caches, worktrees, model weights, and private experiment outputs:
