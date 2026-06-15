@@ -17,14 +17,14 @@ data/worktrees/
 dist/
 
 # LaTeX build outputs.
-paper_jss/*.aux
-paper_jss/*.bbl
-paper_jss/*.blg
-paper_jss/*.fdb_latexmk
-paper_jss/*.fls
-paper_jss/*.log
-paper_jss/*.out
-paper_jss/*.spl
+*.aux
+*.bbl
+*.blg
+*.fdb_latexmk
+*.fls
+*.log
+*.out
+*.spl
 
 # Private scratch files and downloaded papers.
 *.pdf
