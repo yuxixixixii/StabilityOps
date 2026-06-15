@@ -15,6 +15,7 @@ import re
 import shutil
 import sys
 import threading
+import traceback
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import replace
 from pathlib import Path
@@ -57,6 +58,13 @@ def task_key(row: dict[str, Any]) -> tuple[str, str, str]:
 
 def safe_name(text: str) -> str:
     return re.sub(r"[^A-Za-z0-9_.-]+", "_", text)
+
+
+def resolve_tool_paths(config: ExperimentConfig) -> ExperimentConfig:
+    mvn = Path(config.mvn).expanduser()
+    if not mvn.is_absolute():
+        mvn = (ROOT / mvn).resolve()
+    return replace(config, mvn=str(mvn))
 
 
 def compact_sample_payload(bundle: dict[str, Any]) -> dict[str, Any]:
@@ -398,6 +406,7 @@ class StabilityOpsRunner:
                         "decision": "error",
                         "error_class": "runner_exception",
                         "error": repr(exc),
+                        "traceback": traceback.format_exc(),
                     }
                 with self.lock:
                     append_jsonl(self.results_path, row)
@@ -426,6 +435,7 @@ def parse_args() -> argparse.Namespace:
 def main() -> None:
     args = parse_args()
     config = load_config(args.config, dry_run=args.dry_run, fake_llm=args.fake_llm, limit=args.limit)
+    config = resolve_tool_paths(config)
     if args.skip_validation:
         config = replace(config, skip_validation=True)
     if args.validation_workers is not None:

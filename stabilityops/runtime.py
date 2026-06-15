@@ -27,8 +27,8 @@ ID_TRANSFORMS = {
     "ID_QUERY_STRING_ORDER_INSENSITIVE_ASSERT",
     "ID_JSON_READTREE_ASSERT",
     "ID_JSON_READTREE_ASSERT_TRY_CATCH",
-    "ID_FASTJSON_PARSE_ASSERT",
-    "ID_FASTJSON_METHOD_JSON_ASSERTS",
+    "ID_JSON_API_PARSE_ASSERT",
+    "ID_JSON_API_METHOD_ASSERTS",
     "ID_JSON_MISSING_TYPE_SETTER",
     "ID_SORT_REFLECTION_RESULTS",
     "ID_SORT_DECLARED_MEMBERS_BY_NAME",
@@ -40,19 +40,22 @@ NIO_TRANSFORMS = {
 }
 
 OD_TRANSFORMS = {
-    "OD_MYBATIS_RESET_DB_SETUP",
-    "OD_FASTJSON_DEFAULT_TZ_LOCALE",
+    "OD_DATABASE_FIXTURE_RESET_SETUP",
+    "OD_JSON_GLOBAL_FORMAT_STATE_RESET",
     "OD_RESTORE_ENV_AFTER_MUTATION",
     "OD_RESOURCE_REMOVE_PATH",
 }
 
 OD_VIC_TRANSFORMS = {
-    "OD_VIC_NACOS_REGISTER_SUBTYPE_BEFORE",
-    "OD_VIC_JOBREGISTRY_SHUTDOWN_BEFORE",
+    "OD_VIC_SUBTYPE_REGISTRY_RESTORE_BEFORE",
+    "OD_VIC_JOB_REGISTRY_RESET_BEFORE",
     "OD_VIC_RESOURCE_REMOVE_PATH",
     "OD_VIC_SCHEMA_DROP_AFTER",
-    "OD_VIC_ORMLITE_TABLE_CLEANUP",
+    "OD_VIC_DATABASE_TABLE_CLEANUP",
 }
+
+def canonical_transform_name(transform: str) -> str:
+    return str(transform or "").strip().upper()
 
 
 def allowed_transforms_for_sample(sample: dict[str, str]) -> list[str]:
@@ -592,9 +595,9 @@ def patch_substantive_changes(text: str) -> tuple[list[str], list[str]]:
 
 
 CLASS_LEVEL_TRUSTED_TRANSFORMS = {
-    "OD_MYBATIS_RESET_DB_SETUP",
-    "OD_FASTJSON_DEFAULT_TZ_LOCALE",
-    "OD_VIC_NACOS_REGISTER_SUBTYPE_BEFORE_CLASS",
+    "OD_DATABASE_FIXTURE_RESET_SETUP",
+    "OD_JSON_GLOBAL_FORMAT_STATE_RESET",
+    "OD_VIC_SUBTYPE_REGISTRY_RESTORE_BEFORE_CLASS",
 }
 
 NON_TARGET_TRUSTED_TRANSFORMS = {
@@ -1086,8 +1089,8 @@ def project_mentions_jackson(sample: dict[str, str], original: str) -> bool:
     return False
 
 
-def project_mentions_gson(sample: dict[str, str], original: str) -> bool:
-    """Return whether Gson is already part of the target project context."""
+def project_mentions_object_json_parser(sample: dict[str, str], original: str) -> bool:
+    """Return whether an object-level JSON parser is already part of the target project context."""
     if "com.google.gson" in original or "Gson" in original:
         return True
     repo_dir = Path(sample.get("remote_repo_dir", ""))
@@ -1412,7 +1415,7 @@ def json_readtree_expr_allowed(expr: str) -> tuple[bool, str]:
     return True, ""
 
 
-def fastjson_parse_template(original: str, sample: dict[str, str]) -> tuple[str | None, str]:
+def json_api_parse_template(original: str, sample: dict[str, str]) -> tuple[str | None, str]:
     if "com.alibaba.fastjson2.JSON" in original:
         return "com.alibaba.fastjson2.JSON.parse({expr})", ""
     if "com.alibaba.fastjson.JSON" in original:
@@ -1424,8 +1427,8 @@ def fastjson_parse_template(original: str, sample: dict[str, str]) -> tuple[str 
             return "com.alibaba.fastjson.JSON.parse({expr})", ""
         return "JSON.parse({expr})", ""
     repo_dir = Path(sample.get("remote_repo_dir", ""))
-    fastjson2 = False
-    fastjson1 = False
+    json_api_v2 = False
+    json_api_v1 = False
     if repo_dir.exists():
         source_hits = 0
         for source in repo_dir.rglob("*.java"):
@@ -1436,9 +1439,9 @@ def fastjson_parse_template(original: str, sample: dict[str, str]) -> tuple[str 
             except OSError:
                 continue
             source_hits += 1
-            fastjson2 = fastjson2 or "com.alibaba.fastjson2" in text
-            fastjson1 = fastjson1 or "com.alibaba.fastjson" in text
-            if fastjson2 or fastjson1:
+            json_api_v2 = json_api_v2 or "com.alibaba.fastjson2" in text
+            json_api_v1 = json_api_v1 or "com.alibaba.fastjson" in text
+            if json_api_v2 or json_api_v1:
                 break
         for name in ["pom.xml", "build.gradle", "build.gradle.kts"]:
             for build_file in list(repo_dir.rglob(name))[:40]:
@@ -1446,13 +1449,13 @@ def fastjson_parse_template(original: str, sample: dict[str, str]) -> tuple[str 
                     text = build_file.read_text(encoding="utf-8", errors="replace")
                 except OSError:
                     continue
-                fastjson2 = fastjson2 or "fastjson2" in text or "com.alibaba.fastjson2" in text
-                fastjson1 = fastjson1 or "fastjson" in text or "com.alibaba.fastjson" in text
-    if fastjson2:
+                json_api_v2 = json_api_v2 or "fastjson2" in text or "com.alibaba.fastjson2" in text
+                json_api_v1 = json_api_v1 or "fastjson" in text or "com.alibaba.fastjson" in text
+    if json_api_v2:
         return "com.alibaba.fastjson2.JSON.parse({expr})", ""
-    if fastjson1:
+    if json_api_v1:
         return "com.alibaba.fastjson.JSON.parse({expr})", ""
-    return None, "fastjson_not_visible"
+    return None, "json_api_parser_not_visible"
 
 
 def synthesize_json_semantic_assert(lines: list[str], wrapper_template: str, transform_name: str) -> tuple[list[str], dict[str, Any]]:
@@ -1595,7 +1598,7 @@ def synthesize_json_semantic_assert_try_catch(
     return generated, {"ok": True, "transform": transform_name, "changed_assertions": changed}
 
 
-def synthesize_fastjson_parse_assert(lines: list[str], wrapper_template: str) -> tuple[list[str], dict[str, Any]]:
+def synthesize_json_api_parse_assert(lines: list[str], wrapper_template: str) -> tuple[list[str], dict[str, Any]]:
     generated: list[str] = []
     changed = 0
     for line in lines:
@@ -1631,7 +1634,7 @@ def synthesize_fastjson_parse_assert(lines: list[str], wrapper_template: str) ->
             f"{indent}{prefix}assertEquals({wrapper_template.format(expr=expected)}, {wrapper_template.format(expr=actual)});"
         ]
         changed = 1
-    return generated, {"ok": True, "transform": "ID_FASTJSON_PARSE_ASSERT", "changed_assertions": changed}
+    return generated, {"ok": True, "transform": "ID_JSON_API_PARSE_ASSERT", "changed_assertions": changed}
 
 
 def expression_looks_jsonish(expr: str) -> bool:
@@ -1643,12 +1646,12 @@ def expression_looks_jsonish(expr: str) -> bool:
     return any(token in text for token in ["JSON.toJSONString", "JSONPath", "JSONObject", "JSONArray"])
 
 
-def synthesize_fastjson_method_json_asserts(
+def synthesize_json_api_method_json_asserts(
     original: str,
     sample: dict[str, str],
     rel_path: str,
 ) -> tuple[str, dict[str, Any]] | None:
-    wrapper_template, wrapper_error = fastjson_parse_template(original, sample)
+    wrapper_template, wrapper_error = json_api_parse_template(original, sample)
     if not wrapper_template:
         return None
     method_start, method_end = method_bounds_for_sample(original, sample)
@@ -1682,10 +1685,10 @@ def synthesize_fastjson_method_json_asserts(
     meta.update(
         {
             "mode": "transform_to_unified_diff",
-            "transform": "ID_FASTJSON_METHOD_JSON_ASSERTS",
+            "transform": "ID_JSON_API_METHOD_ASSERTS",
             "target_file": rel_path,
             "changed_assertions": changed,
-            "guard": "fastjson project target method JSON-ish assertEquals",
+            "guard": "visible JSON API assertions in target method",
         }
     )
     return patch, meta
@@ -1950,8 +1953,8 @@ def synthesize_insert_statement_after_line(
     span_error = validate_line_span(insert_after, insert_after, method_start, method_end)
     if span_error:
         if transform in {
-            "OD_VIC_NACOS_REGISTER_SUBTYPE_BEFORE",
-            "OD_VIC_JOBREGISTRY_SHUTDOWN_BEFORE",
+            "OD_VIC_SUBTYPE_REGISTRY_RESTORE_BEFORE",
+            "OD_VIC_JOB_REGISTRY_RESET_BEFORE",
             "OD_VIC_RESOURCE_REMOVE_PATH",
             "OD_RESOURCE_REMOVE_PATH",
         }:
@@ -2033,7 +2036,7 @@ def synthesize_schema_cleanup_after_assert(
     )
 
 
-def infer_ormlite_entity_class(original: str, sample: dict[str, str], action: dict[str, Any]) -> tuple[str | None, str]:
+def infer_database_entity_class(original: str, sample: dict[str, str], action: dict[str, Any]) -> tuple[str | None, str]:
     explicit = str(action.get("entity_class") or action.get("schema_class") or action.get("schema_expr") or "").strip()
     explicit_type = class_name_from_class_literal(explicit) if explicit else None
     if explicit_type and java_type_visible(original, explicit_type):
@@ -2059,20 +2062,20 @@ def infer_ormlite_entity_class(original: str, sample: dict[str, str], action: di
             candidate = match.group(1).split(".")[-1]
             if java_type_visible(original, candidate):
                 return candidate, "method_pattern"
-    return None, "ormlite_entity_class_not_visible"
+    return None, "database_entity_class_not_visible"
 
 
-def synthesize_ormlite_drop_table_before(
+def synthesize_database_drop_table_before(
     original: str,
     sample: dict[str, str],
     action: dict[str, Any],
     rel_path: str,
 ) -> tuple[str, dict[str, Any]]:
     if not any(token in original for token in ["createDao(", "Dao<", "RuntimeExceptionDao<", "TableUtils."]):
-        return "", {"ok": False, "error_class": "inapplicable_ormlite_drop_table", "error": "ormlite dao/table pattern not visible"}
-    entity_class, reason = infer_ormlite_entity_class(original, sample, action)
+        return "", {"ok": False, "error_class": "inapplicable_database_table_cleanup", "error": "database dao/table pattern not visible"}
+    entity_class, reason = infer_database_entity_class(original, sample, action)
     if not entity_class:
-        return "", {"ok": False, "error_class": "missing_ormlite_entity_class", "error": reason}
+        return "", {"ok": False, "error_class": "missing_database_entity_class", "error": reason}
     connection_expr = str(action.get("connection_expr") or "connectionSource").strip()
     if not IDENTIFIER_EXPR_RE.match(connection_expr):
         return "", {"ok": False, "error_class": "unsafe_connection_expr", "error": connection_expr}
@@ -2092,7 +2095,7 @@ def synthesize_ormlite_drop_table_before(
         sample,
         scoped_action,
         rel_path,
-        "OD_VIC_ORMLITE_DROP_TABLE_BEFORE",
+        "OD_VIC_DATABASE_DROP_TABLE_BEFORE",
         statement,
         allow_duplicate=False,
     )
@@ -2120,11 +2123,11 @@ def json_assert_wrapper_for_method(
     method_text = "\n".join(method_lines)
     selected_text = "\n".join(selected_lines)
     if "PRETTY_PRINT_GSON" in method_text or "PRETTY_PRINT_GSON" in selected_text:
-        return "PRETTY_PRINT_GSON.fromJson({expr}, Object.class)", "ID_JSON_GSON_OBJECT_ASSERT"
+        return "PRETTY_PRINT_GSON.fromJson({expr}, Object.class)", "ID_JSON_OBJECT_SEMANTIC_ASSERT"
     if "GSON" in method_text or "GSON" in selected_text:
-        return "GSON.fromJson({expr}, Object.class)", "ID_JSON_GSON_OBJECT_ASSERT"
-    if project_mentions_gson(sample, original):
-        return "new com.google.gson.Gson().fromJson({expr}, Object.class)", "ID_JSON_GSON_OBJECT_ASSERT"
+        return "GSON.fromJson({expr}, Object.class)", "ID_JSON_OBJECT_SEMANTIC_ASSERT"
+    if project_mentions_object_json_parser(sample, original):
+        return "new com.google.gson.Gson().fromJson({expr}, Object.class)", "ID_JSON_OBJECT_SEMANTIC_ASSERT"
     if method_allows_json_processing_exception(method_lines) and "OBJECT_MAPPER" in method_text:
         return "OBJECT_MAPPER.readTree({expr})", "ID_JSON_READTREE_ASSERT"
     if method_allows_json_processing_exception(method_lines) and project_mentions_jackson(sample, original):
@@ -2141,9 +2144,11 @@ def patch_from_transform_action(sample: dict[str, str], repair_json: dict[str, A
     if not isinstance(action, dict):
         return "", {"ok": False, "error_class": "missing_transform_action", "error": "transform_action is not an object"}
 
-    transform = str(action.get("transform") or action.get("name") or "").strip().upper()
+    transform = canonical_transform_name(action.get("transform") or action.get("name") or "")
     if not transform:
         return "", {"ok": False, "error_class": "missing_transform_name", "error": ""}
+    action = dict(action)
+    action["transform"] = transform
     allowed_transforms = set(allowed_transforms_for_sample(sample))
     if transform not in allowed_transforms:
         return "", {
@@ -2170,7 +2175,7 @@ def patch_from_transform_action(sample: dict[str, str], repair_json: dict[str, A
     rel_path = target_file or test_path.name
 
     explicit_sample_transforms = {
-        "ID_FASTJSON_METHOD_JSON_ASSERTS": lambda: synthesize_fastjson_method_json_asserts(original, sample, rel_path),
+        "ID_JSON_API_METHOD_ASSERTS": lambda: synthesize_json_api_method_json_asserts(original, sample, rel_path),
         "ID_SORT_DECLARED_MEMBERS_BY_NAME": lambda: synthesize_declared_members_sort_by_name(sample),
     }
     if transform in explicit_sample_transforms:
@@ -2184,7 +2189,7 @@ def patch_from_transform_action(sample: dict[str, str], repair_json: dict[str, A
             "transform": transform,
         }
 
-    if transform == "OD_MYBATIS_RESET_DB_SETUP":
+    if transform == "OD_DATABASE_FIXTURE_RESET_SETUP":
         if "MybatisHelper.getSqlSession()" not in original:
             return "", {"ok": False, "error_class": "inapplicable_mybatis_setup", "error": "MybatisHelper not visible"}
         setup_method = """    @org.junit.Before
@@ -2206,9 +2211,9 @@ def patch_from_transform_action(sample: dict[str, str], repair_json: dict[str, A
         meta.update({"transform": transform})
         return patch, meta
 
-    if transform == "OD_FASTJSON_DEFAULT_TZ_LOCALE":
+    if transform == "OD_JSON_GLOBAL_FORMAT_STATE_RESET":
         if "extends TestCase" not in original or "JSON.defaultTimeZone" in original:
-            return "", {"ok": False, "error_class": "duplicate_or_inapplicable_fastjson_setup", "error": ""}
+            return "", {"ok": False, "error_class": "duplicate_or_inapplicable_json_global_setup", "error": ""}
         timezone = str(action.get("timezone") or "Asia/Shanghai").strip() or "Asia/Shanghai"
         locale_expr = str(action.get("locale_expr") or "java.util.Locale.CHINA").strip() or "java.util.Locale.CHINA"
         if not re.match(r"^[A-Za-z_][\w.]*$", locale_expr):
@@ -2223,7 +2228,7 @@ def patch_from_transform_action(sample: dict[str, str], repair_json: dict[str, A
         meta.update({"transform": transform, "timezone": timezone, "locale_expr": locale_expr})
         return patch, meta
 
-    if transform in {"OD_VIC_NACOS_REGISTER_SUBTYPE_BEFORE", "OD_VIC_NACOS_REGISTER_SUBTYPE_BEFORE_CLASS"}:
+    if transform in {"OD_VIC_SUBTYPE_REGISTRY_RESTORE_BEFORE", "OD_VIC_SUBTYPE_REGISTRY_RESTORE_BEFORE_CLASS"}:
         subtype_class = str(action.get("subtype_class") or "TestChecker").strip()
         type_expr = str(action.get("type_expr") or f"{subtype_class}.TYPE").strip()
         factory_expr = str(action.get("factory_expr") or "HealthCheckerFactory").strip()
@@ -2232,7 +2237,7 @@ def patch_from_transform_action(sample: dict[str, str], repair_json: dict[str, A
         if subtype_class not in original or factory_expr not in original:
             return "", {"ok": False, "error_class": "inapplicable_register_subtype", "error": ""}
         statement = f"{factory_expr}.registerSubType({subtype_class}.class, {type_expr});"
-        if transform == "OD_VIC_NACOS_REGISTER_SUBTYPE_BEFORE_CLASS":
+        if transform == "OD_VIC_SUBTYPE_REGISTRY_RESTORE_BEFORE_CLASS":
             setup_method = f"""    @org.junit.BeforeClass
     public static void beforeClass() {{
         {statement}
@@ -2244,7 +2249,7 @@ def patch_from_transform_action(sample: dict[str, str], repair_json: dict[str, A
         action["insert_after_line"] = action.get("insert_after_line") or method_open_line(original, sample)
         return synthesize_insert_statement_after_line(original, sample, action, rel_path, transform, statement)
 
-    if transform == "OD_VIC_JOBREGISTRY_SHUTDOWN_BEFORE":
+    if transform == "OD_VIC_JOB_REGISTRY_RESET_BEFORE":
         job_name = str(action.get("job_name") or action.get("value") or "").strip()
         if not job_name:
             method_text = "\n".join(lines_plain[int(method_start or 1) - 1 : int(method_end or 0)])
@@ -2257,10 +2262,10 @@ def patch_from_transform_action(sample: dict[str, str], repair_json: dict[str, A
         action["insert_after_line"] = action.get("insert_after_line") or method_open_line(original, sample)
         return synthesize_insert_statement_after_line(original, sample, action, rel_path, transform, statement)
 
-    if transform in {"OD_VIC_ORMLITE_TABLE_CLEANUP", "OD_VIC_ORMLITE_DROP_TABLE_BEFORE", "OD_VIC_ORMLITE_DROP_SCHEMA_FOR_DAO_CLASS"}:
-        patch, meta = synthesize_ormlite_drop_table_before(original, sample, action, rel_path)
+    if transform in {"OD_VIC_DATABASE_TABLE_CLEANUP", "OD_VIC_DATABASE_DROP_TABLE_BEFORE", "OD_VIC_DATABASE_SCHEMA_CLEANUP"}:
+        patch, meta = synthesize_database_drop_table_before(original, sample, action, rel_path)
         if meta.get("ok"):
-            meta["transform"] = "OD_VIC_ORMLITE_TABLE_CLEANUP"
+            meta["transform"] = "OD_VIC_DATABASE_TABLE_CLEANUP"
         return patch, meta
 
     if transform == "OD_RESTORE_ENV_AFTER_MUTATION":
@@ -2380,9 +2385,9 @@ def patch_from_transform_action(sample: dict[str, str], repair_json: dict[str, A
         else:
             wrapper_template, effective_transform = json_assert_wrapper_for_method(method_lines, selected_lines, sample, original)
             if not wrapper_template or not effective_transform:
-                fastjson_template, _fastjson_error = fastjson_parse_template(original, sample)
-                if fastjson_template:
-                    new_lines, meta = synthesize_fastjson_parse_assert(selected_lines, fastjson_template)
+                json_api_template, _json_api_error = json_api_parse_template(original, sample)
+                if json_api_template:
+                    new_lines, meta = synthesize_json_api_parse_assert(selected_lines, json_api_template)
                 elif project_mentions_jackson(sample, original):
                     new_lines, meta = synthesize_json_semantic_assert_try_catch(
                         selected_lines,
@@ -2401,11 +2406,11 @@ def patch_from_transform_action(sample: dict[str, str], repair_json: dict[str, A
             "new com.fasterxml.jackson.databind.ObjectMapper().readTree({expr})",
             "ID_JSON_READTREE_ASSERT_TRY_CATCH",
         )
-    elif transform == "ID_FASTJSON_PARSE_ASSERT":
-        wrapper_template, wrapper_error = fastjson_parse_template(original, sample)
+    elif transform == "ID_JSON_API_PARSE_ASSERT":
+        wrapper_template, wrapper_error = json_api_parse_template(original, sample)
         if not wrapper_template:
-            return "", {"ok": False, "error_class": wrapper_error or "fastjson_not_visible", "error": ""}
-        new_lines, meta = synthesize_fastjson_parse_assert(selected_lines, wrapper_template)
+            return "", {"ok": False, "error_class": wrapper_error or "json_api_parser_not_visible", "error": ""}
+        new_lines, meta = synthesize_json_api_parse_assert(selected_lines, wrapper_template)
     else:
         return "", {"ok": False, "error_class": "unsupported_transform", "error": transform}
     if not meta.get("ok"):

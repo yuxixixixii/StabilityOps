@@ -21,7 +21,7 @@ Return raw JSON only. Do not wrap the answer in Markdown. Do not include explana
     "evidence_lines": [123, 124]
   },
   "transform_action": {
-    "transform": "ID_LIST_ORDER_INSENSITIVE|ID_ASSERTJ_LIST_ORDER_INSENSITIVE|ID_QUERY_STRING_ORDER_INSENSITIVE_ASSERT|ID_JSON_READTREE_ASSERT|ID_JSON_READTREE_ASSERT_TRY_CATCH|ID_FASTJSON_PARSE_ASSERT|ID_FASTJSON_METHOD_JSON_ASSERTS|ID_JSON_MISSING_TYPE_SETTER|ID_SORT_REFLECTION_RESULTS|ID_SORT_DECLARED_MEMBERS_BY_NAME|NIO_STATIC_FIELD_RESET|NIO_STATIC_FIELD_RESET_INFER|OD_MYBATIS_RESET_DB_SETUP|OD_FASTJSON_DEFAULT_TZ_LOCALE|OD_RESTORE_ENV_AFTER_MUTATION|OD_RESOURCE_REMOVE_PATH|OD_VIC_NACOS_REGISTER_SUBTYPE_BEFORE|OD_VIC_JOBREGISTRY_SHUTDOWN_BEFORE|OD_VIC_RESOURCE_REMOVE_PATH|OD_VIC_SCHEMA_DROP_AFTER|OD_VIC_ORMLITE_TABLE_CLEANUP|NO_SAFE_TRANSFORM",
+    "transform": "ID_LIST_ORDER_INSENSITIVE|ID_ASSERTJ_LIST_ORDER_INSENSITIVE|ID_QUERY_STRING_ORDER_INSENSITIVE_ASSERT|ID_JSON_READTREE_ASSERT|ID_JSON_READTREE_ASSERT_TRY_CATCH|ID_JSON_API_PARSE_ASSERT|ID_JSON_API_METHOD_ASSERTS|ID_JSON_MISSING_TYPE_SETTER|ID_SORT_REFLECTION_RESULTS|ID_SORT_DECLARED_MEMBERS_BY_NAME|NIO_STATIC_FIELD_RESET|NIO_STATIC_FIELD_RESET_INFER|OD_DATABASE_FIXTURE_RESET_SETUP|OD_JSON_GLOBAL_FORMAT_STATE_RESET|OD_RESTORE_ENV_AFTER_MUTATION|OD_RESOURCE_REMOVE_PATH|OD_VIC_SUBTYPE_REGISTRY_RESTORE_BEFORE|OD_VIC_JOB_REGISTRY_RESET_BEFORE|OD_VIC_RESOURCE_REMOVE_PATH|OD_VIC_SCHEMA_DROP_AFTER|OD_VIC_DATABASE_TABLE_CLEANUP|NO_SAFE_TRANSFORM",
     "target_file": "...",
     "start_line": 123,
     "end_line": 124,
@@ -63,7 +63,7 @@ General constraints:
 - Choose line numbers only from `sample.target_method_numbered_code`, unless the chosen transform explicitly says `target_file` only.
 - Treat any context whose reason contains `non-editable context snippet` as evidence only. Never choose `start_line`, `end_line`, or `insert_after_line` from those snippets.
 - Chosen line spans must be inside `sample.target_method_start_line` to `sample.target_method_end_line`, unless the chosen transform explicitly adds class-level setup.
-- For target-file-only project operators, do not invent `start_line`, `end_line`, `insert_after_line`, `array_variable`, or `receiver`. Set only the fields explicitly required by that operator.
+- For target-file-only operators, do not invent `start_line`, `end_line`, `insert_after_line`, `array_variable`, or `receiver`. Set only the fields explicitly required by that operator.
 - Do not edit production code, comments only, or whitespace only.
 - Do not add imports. If a transform needs library types, use the transform that relies on fully qualified names.
 - Do not skip/disable the test, delete core assertions, or weaken assertions to trivial checks.
@@ -95,7 +95,7 @@ Do not choose an operator from another category even if its name looks related.
 
 2. Evidence-specific operator gate.
 
-StabilityOps primary operators are not selected by repository name. Choose an API-level or pattern-level operator only when the required code evidence is visible in the target method, target file, or retrieved context. If the evidence is absent, return `NO_SAFE_TRANSFORM`.
+StabilityOps operators are not selected by repository name, package name, dependency name, or category label alone. Category only restricts the allowed operator family; it is not sufficient evidence that a concrete operator applies. Choose an API-level or pattern-level operator only when the target method, target file, or retrieved context shows the operator-specific code pattern. For example, a JSON parsing operator requires a visible JSON string assertion or serialization/parsing expression; a database cleanup operator requires visible DAO/table/schema evidence; a registry cleanup operator requires a visible registry receiver and key/path. If the required evidence is absent, return `NO_SAFE_TRANSFORM`.
 
 3. Line-span gate.
 
@@ -187,8 +187,8 @@ Do not choose this transform for unknown fluent APIs such as `.assertQueryString
 
 Use when all of the following hold:
 
-- The target method already has JSON string assertions such as `assertEquals(expectedJson, gson);`.
-- `OBJECT_MAPPER`/`GSON` is visible in `sample.target_method_code` or surrounding visible context, or the project already depends on Jackson/Gson/FastJSON so the executor can use a fully qualified parser.
+- The target method already has JSON string assertions such as `assertEquals(expectedJson, actualJson);`.
+- A supported JSON parser or semantic JSON comparison mechanism is visible in `sample.target_method_code` or surrounding visible context, or can be safely inferred by the executor from project-visible imports/dependencies.
 - The assertion variables are already declared before the selected assertion line.
 
 Required parameters:
@@ -227,9 +227,9 @@ If Jackson is project-visible but the target method does not declare a JSON exce
 Do not choose this transform if it would require `JSONObject`, `Map`, `TypeToken`, a new helper, or a new import.
 For a multi-line string assertion such as `assertEquals("{...}", jsonRequest);`, select the full assertion span from the `assertEquals(` line through the closing `);` line.
 
-5. `ID_FASTJSON_PARSE_ASSERT`
+5. `ID_JSON_API_PARSE_ASSERT`
 
-Use when the target method compares FastJSON/fastjson2 serialized strings where object/map field order is unstable, including FastJSON-specific non-standard JSON strings that Jackson may not parse.
+Use when the target method compares JSON-API serialized strings where object/map field order is unstable, including JSON-like strings that are not accepted by the generic tree parser.
 
 Typical examples:
 
@@ -244,14 +244,14 @@ Required parameters:
 - `start_line`: first `assertEquals(expectedJsonLike, actualJsonLike);` line to transform.
 - `end_line`: last line in the selected span.
 
-The executor will synthesize a semantic comparison using the project-visible FastJSON parser:
+The executor will synthesize a semantic comparison using a project-visible JSON parser:
 
 ```java
 assertEquals(JSON.parse(expected), JSON.parse(actual));
 ```
 
-Choose this over `ID_JSON_READTREE_ASSERT` when the project uses `com.alibaba.fastjson` or `com.alibaba.fastjson2`, or when the expected string is FastJSON-specific and not strict Jackson JSON.
-The executor may use fully qualified `com.alibaba.fastjson.JSON.parse(...)` or `com.alibaba.fastjson2.JSON.parse(...)` when FastJSON is visible elsewhere in the project.
+Choose this over `ID_JSON_READTREE_ASSERT` when the visible code uses a JSON API whose output is JSON-like but not strict tree-parser JSON.
+The executor may use a fully qualified project-visible JSON parser when the local import is absent.
 Do not choose this transform for ordinary text output, XML, YAML, query strings, or JSON strings that require a missing field to be added.
 
 6. `ID_JSON_MISSING_TYPE_SETTER`
@@ -340,19 +340,19 @@ Required parameters:
 The executor infers `ASSIGN_ZERO`, `ASSIGN_FALSE`, `ASSIGN_NULL`, or `CLEAR_COLLECTION` from visible static field declarations.
 Do not use this if the static field declaration is not visible in the provided context.
 
-9. `OD_MYBATIS_RESET_DB_SETUP`
+9. `OD_DATABASE_FIXTURE_RESET_SETUP`
 
-Use for Mapper/MyBatis database-state tests where the target class uses `MybatisHelper.getSqlSession()` and tests mutate the same seeded database. This transform adds a deterministic `@org.junit.Before setupDB()` method using `CreateDB.sql` and fully qualified helper classes.
+Use for database-state tests where the target class exposes a session helper and tests mutate the same seeded database. This transform adds a deterministic setup method that restores the seed fixture using visible database setup evidence.
 
 Required parameters:
 
 - `target_file` only.
 
-Do not choose this transform unless the target test class visibly uses `MybatisHelper.getSqlSession()`.
+Do not choose this transform unless the target test class visibly exposes the supported database session/setup pattern.
 
-10. `OD_FASTJSON_DEFAULT_TZ_LOCALE`
+10. `OD_JSON_GLOBAL_FORMAT_STATE_RESET`
 
-Use for FastJSON date/time tests where parsing or serialization depends on global default timezone/locale. This transform adds a JUnit 3 `setUp()` method that sets `JSON.defaultTimeZone` and `JSON.defaultLocale`.
+Use for JSON date/time tests where parsing or serialization depends on global default timezone/locale. This transform adds a setup method that sets visible JSON global format state.
 
 Required parameters:
 
@@ -360,7 +360,7 @@ Required parameters:
 - optional `timezone`; omit it unless a visible test invariant requires a specific timezone.
 - optional `locale_expr`; omit it unless a visible test invariant requires a specific locale expression.
 
-Do not choose this transform unless the class extends `TestCase` and already imports/uses `JSON`.
+Do not choose this transform unless the class uses a supported test lifecycle style and the JSON global state API is visible.
 
 11. `OD_RESOURCE_REMOVE_PATH` / `OD_VIC_RESOURCE_REMOVE_PATH`
 
@@ -380,10 +380,10 @@ Guard conditions:
 - The receiver must be an external resource handle such as a ZooKeeper/Curator/registry client.
 - Do not use this operator for DAO objects, mocks, database connections, temporary folders, files, `connectionSource`, `testFolder`, `File`, `Path`, or variables declared after `insert_after_line`.
 - If the only candidate receiver is `dao`, `rtDao`, `conn`, `connectionSource`, `testFolder`, `folder`, `file`, or `tempFolder`, choose `NO_SAFE_TRANSFORM`.
-- Do not choose this operator for ORMLite tests; use an ORMLite-specific operator when its guards match.
+- Do not choose this operator for database DAO/table state; use a database cleanup operator when its guards match.
 - Do not choose this operator if you cannot name a visible receiver.
 
-12. `OD_VIC_NACOS_REGISTER_SUBTYPE_BEFORE`
+12. `OD_VIC_SUBTYPE_REGISTRY_RESTORE_BEFORE`
 
 Use for an order-dependent victim test that deserializes an extension subtype but does not register that subtype in the target method. Typical extension-factory pattern:
 
@@ -402,9 +402,9 @@ Required parameters:
 
 The framework will synthesize `HealthCheckerFactory.registerSubType(ExampleSubtype.class, ExampleSubtype.TYPE);`.
 
-13. `OD_VIC_JOBREGISTRY_SHUTDOWN_BEFORE`
+13. `OD_VIC_JOB_REGISTRY_RESET_BEFORE`
 
-Use for ElasticJob victim tests where another test leaves `JobRegistry` state for a job name and the target method expects that job to be absent/shutdown/default. Examples include assertions over `isShutdown`, `getCurrentShardingTotalCount`, or `getLocalFailoverItems`.
+Use for victim tests where another test leaves job-registry state for a job name and the target method expects that job to be absent, shutdown, or reset. Examples include assertions over shutdown state, sharding counts, or local failover items.
 
 Required parameters:
 
@@ -415,7 +415,7 @@ The framework will synthesize `JobRegistry.getInstance().shutdown("job_name");`.
 
 14. `OD_VIC_SCHEMA_DROP_AFTER`
 
-Use for ORMLite schema-state victim tests where the target method creates a schema and should clean it after successful creation to avoid polluting repeated or later runs.
+Use for schema-state victim tests where the target method creates a schema and should clean it after successful creation to avoid polluting repeated or later runs.
 
 Required parameters:
 
@@ -432,9 +432,9 @@ Guard conditions:
 - The schema class must already be visible in the target test file through a class declaration, class literal, or type use.
 - Do not provide a schema class unless it is visible in the target file.
 
-15. `OD_VIC_ORMLITE_TABLE_CLEANUP`
+15. `OD_VIC_DATABASE_TABLE_CLEANUP`
 
-Use for ORMLite order-dependent victim tests where a previous test may leave a table/schema for an entity class, and the target method creates or uses a DAO for that entity.
+Use for order-dependent victim tests where a previous test may leave a database table/schema for an entity class, and the target method creates or uses a DAO for that entity.
 
 Typical examples:
 
@@ -450,14 +450,10 @@ Required parameters:
 - optional `entity_class`: entity class name, e.g. `EntityClass`. If omitted, the executor infers it from `createDao(EntityClass.class, true)`, `Dao<EntityClass,...>`, or `RuntimeExceptionDao<EntityClass,...>`.
 - optional `connection_expr`, default `connectionSource`.
 
-The executor will synthesize:
+The executor will synthesize a guarded table cleanup call using the visible database utility, connection expression, and entity class.
 
-```java
-com.j256.ormlite.table.TableUtils.dropTable(connectionSource, EntityClass.class, true);
-```
-
-Do not choose this operator unless an ORMLite DAO/table pattern and the entity class are visible in the target file.
-Prefer this operator over `OD_VIC_RESOURCE_REMOVE_PATH` for ORMLite DAO/table pollution. ORMLite failures normally require table/schema cleanup, not path removal.
+Do not choose this operator unless a DAO/table pattern and the entity class are visible in the target file.
+Prefer this operator over `OD_VIC_RESOURCE_REMOVE_PATH` for database DAO/table pollution. Table pollution normally requires database cleanup, not path removal.
 
 16. `ID_JSON_READTREE_ASSERT_TRY_CATCH`
 
@@ -470,15 +466,15 @@ Required parameters:
 
 The executor will wrap each semantic JSON comparison in a local try/catch using a fully qualified `ObjectMapper`.
 
-17. `ID_FASTJSON_METHOD_JSON_ASSERTS`
+17. `ID_JSON_API_METHOD_ASSERTS`
 
-Use for FastJSON/fastjson2 tests where several method-level assertions compare JSON-like strings produced by project-visible FastJSON APIs such as `JSON.toJSONString`, `JSONPath`, `JSONObject`, or `JSONArray`, and the exact field/key order is unstable.
+Use when several method-level assertions compare JSON-like strings produced by visible JSON APIs such as `JSON.toJSONString`, `JSONPath`, `JSONObject`, or `JSONArray`, and the exact field/key order is unstable.
 
 Required parameters:
 
 - `target_file`: primary target file only.
 
-The executor will rewrite only JSON-like method assertions into FastJSON semantic comparisons. This operator is API-level; do not rely on repository names. Do not choose this for ordinary integer/string assertions.
+The executor will rewrite only JSON-like method assertions into semantic JSON comparisons. This operator is API-level; do not rely on repository names. Do not choose this for ordinary integer/string assertions.
 
 18. `ID_SORT_DECLARED_MEMBERS_BY_NAME`
 
@@ -525,23 +521,23 @@ Selection priority:
 - For AssertJ/Guava list or nested collection-order equality failures, choose `ID_ASSERTJ_LIST_ORDER_INSENSITIVE`.
 - For normal JUnit query-string equality failures, choose `ID_QUERY_STRING_ORDER_INSENSITIVE_ASSERT`.
 - For JSON tests with a missing `"type"` field in object construction, prefer `ID_JSON_MISSING_TYPE_SETTER`.
-- For FastJSON/fastjson2 JSON-like string order failures, choose `ID_FASTJSON_PARSE_ASSERT`.
-- For method-level FastJSON assertion clusters, choose `ID_FASTJSON_METHOD_JSON_ASSERTS`.
-- For JSON tests where all expected/actual JSON strings already exist and a mapper/parser is visible or project-level Jackson/Gson/FastJSON is available, choose `ID_JSON_READTREE_ASSERT`.
+- For JSON-like string order failures requiring a visible JSON API parser, choose `ID_JSON_API_PARSE_ASSERT`.
+- For method-level JSON API assertion clusters, choose `ID_JSON_API_METHOD_ASSERTS`.
+- For JSON tests where all expected/actual JSON strings already exist and a mapper/parser is visible or project-level JSON parsing is available, choose `ID_JSON_READTREE_ASSERT`.
 - If Jackson semantic comparison is appropriate but the method does not throw JSON exceptions, choose `ID_JSON_READTREE_ASSERT_TRY_CATCH`.
 - For reflection member order failures inside the target method, choose `ID_SORT_REFLECTION_RESULTS`.
 - For visible helper or production code that consumes unsorted `getDeclaredMethods`, `getDeclaredFields`, or `getDeclaredConstructors`, choose `ID_SORT_DECLARED_MEMBERS_BY_NAME`, even when the target test method itself only shows an assertion symptom.
 - For static mutable fields in nested property-runner classes, choose `NIO_STATIC_FIELD_RESET`.
 - If the static field declaration is visible but reset operation is uncertain, choose `NIO_STATIC_FIELD_RESET_INFER`.
-- For MyBatis seeded database state pollution, choose `OD_MYBATIS_RESET_DB_SETUP`.
-- For FastJSON timezone/locale state pollution, choose `OD_FASTJSON_DEFAULT_TZ_LOCALE`.
+- For seeded database state pollution with visible setup/session evidence, choose `OD_DATABASE_FIXTURE_RESET_SETUP`.
+- For JSON timezone/locale global-state pollution, choose `OD_JSON_GLOBAL_FORMAT_STATE_RESET`.
 - For environment variable pollution where the saved value and mutation are visible, choose `OD_RESTORE_ENV_AFTER_MUTATION`.
 - For external registry/resource path residue, choose `OD_RESOURCE_REMOVE_PATH`.
-- For OD-Vic Nacos subtype registration, choose `OD_VIC_NACOS_REGISTER_SUBTYPE_BEFORE`.
-- For OD-Vic ElasticJob `JobRegistry` state, choose `OD_VIC_JOBREGISTRY_SHUTDOWN_BEFORE`.
+- For OD-Vic subtype-registry prerequisite state, choose `OD_VIC_SUBTYPE_REGISTRY_RESTORE_BEFORE`.
+- For OD-Vic job-registry state, choose `OD_VIC_JOB_REGISTRY_RESET_BEFORE`.
 - For OD-Vic external registry/resource path residue, choose `OD_VIC_RESOURCE_REMOVE_PATH`.
-- For OD-Vic ORMLite DAO/table pollution, choose `OD_VIC_ORMLITE_TABLE_CLEANUP`.
-- For OD-Vic ORMLite schema cleanup, choose `OD_VIC_SCHEMA_DROP_AFTER`.
+- For OD-Vic database DAO/table pollution, choose `OD_VIC_DATABASE_TABLE_CLEANUP`.
+- For OD-Vic schema cleanup, choose `OD_VIC_SCHEMA_DROP_AFTER`.
 - Prefer no transform over a transform that introduces undefined symbols, references variables declared later, or deletes expected-value coverage.
 
 Common wrong choices to avoid:
@@ -549,6 +545,6 @@ Common wrong choices to avoid:
 - Do not choose `ID_ASSERTJ_LIST_ORDER_INSENSITIVE` for AssertJ object/string assertions such as `assertThat(result).isEqualTo(...)`; the actual value must be a collection and the selected line must contain an order-sensitive collection assertion.
 - Do not choose `ID_SORT_DECLARED_MEMBERS_BY_NAME` just because a test mentions reflection; the declared-member result and unsorted consumption must be visible.
 - Do not choose `OD_RESTORE_ENV_AFTER_MUTATION` unless the saved value and environment mutation API are visible.
-- Do not choose `OD_VIC_RESOURCE_REMOVE_PATH` for ORMLite, file-system, temporary-folder, or DAO cleanup.
+- Do not choose `OD_VIC_RESOURCE_REMOVE_PATH` for database-table, file-system, temporary-folder, or DAO cleanup.
 - Do not fill unused JSON fields with placeholder values such as `affected_job`, `/resource/path`, `EntitySchema.class`, `ExampleSubtype`, `UTC`, or empty strings. Only include parameters required by the selected operator.
 - If the only way to make the operator fit is to invent missing evidence, return `NO_SAFE_TRANSFORM`.
