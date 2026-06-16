@@ -597,7 +597,7 @@ def patch_substantive_changes(text: str) -> tuple[list[str], list[str]]:
 CLASS_LEVEL_TRUSTED_TRANSFORMS = {
     "OD_DATABASE_FIXTURE_RESET_SETUP",
     "OD_JSON_GLOBAL_FORMAT_STATE_RESET",
-    "OD_VIC_SUBTYPE_REGISTRY_RESTORE_BEFORE_CLASS",
+    "OD_VIC_SUBTYPE_REGISTRY_RESTORE_BEFORE",
 }
 
 NON_TARGET_TRUSTED_TRANSFORMS = {
@@ -2095,7 +2095,7 @@ def synthesize_database_drop_table_before(
         sample,
         scoped_action,
         rel_path,
-        "OD_VIC_DATABASE_DROP_TABLE_BEFORE",
+        "OD_VIC_DATABASE_TABLE_CLEANUP",
         statement,
         allow_duplicate=False,
     )
@@ -2191,7 +2191,7 @@ def patch_from_transform_action(sample: dict[str, str], repair_json: dict[str, A
 
     if transform == "OD_DATABASE_FIXTURE_RESET_SETUP":
         if "MybatisHelper.getSqlSession()" not in original:
-            return "", {"ok": False, "error_class": "inapplicable_mybatis_setup", "error": "MybatisHelper not visible"}
+            return "", {"ok": False, "error_class": "inapplicable_database_fixture_setup", "error": "database fixture helper not visible"}
         setup_method = """    @org.junit.Before
     public void setupDB() {
         SqlSession sqlSession = MybatisHelper.getSqlSession();
@@ -2228,7 +2228,7 @@ def patch_from_transform_action(sample: dict[str, str], repair_json: dict[str, A
         meta.update({"transform": transform, "timezone": timezone, "locale_expr": locale_expr})
         return patch, meta
 
-    if transform in {"OD_VIC_SUBTYPE_REGISTRY_RESTORE_BEFORE", "OD_VIC_SUBTYPE_REGISTRY_RESTORE_BEFORE_CLASS"}:
+    if transform == "OD_VIC_SUBTYPE_REGISTRY_RESTORE_BEFORE":
         subtype_class = str(action.get("subtype_class") or "TestChecker").strip()
         type_expr = str(action.get("type_expr") or f"{subtype_class}.TYPE").strip()
         factory_expr = str(action.get("factory_expr") or "HealthCheckerFactory").strip()
@@ -2237,14 +2237,6 @@ def patch_from_transform_action(sample: dict[str, str], repair_json: dict[str, A
         if subtype_class not in original or factory_expr not in original:
             return "", {"ok": False, "error_class": "inapplicable_register_subtype", "error": ""}
         statement = f"{factory_expr}.registerSubType({subtype_class}.class, {type_expr});"
-        if transform == "OD_VIC_SUBTYPE_REGISTRY_RESTORE_BEFORE_CLASS":
-            setup_method = f"""    @org.junit.BeforeClass
-    public static void beforeClass() {{
-        {statement}
-    }}"""
-            patch, meta = synthesize_class_setup_method(original, setup_method, rel_path, "static void beforeClass()")
-            meta.update({"transform": transform, "subtype_class": subtype_class, "type_expr": type_expr})
-            return patch, meta
         action = dict(action)
         action["insert_after_line"] = action.get("insert_after_line") or method_open_line(original, sample)
         return synthesize_insert_statement_after_line(original, sample, action, rel_path, transform, statement)
@@ -2262,7 +2254,7 @@ def patch_from_transform_action(sample: dict[str, str], repair_json: dict[str, A
         action["insert_after_line"] = action.get("insert_after_line") or method_open_line(original, sample)
         return synthesize_insert_statement_after_line(original, sample, action, rel_path, transform, statement)
 
-    if transform in {"OD_VIC_DATABASE_TABLE_CLEANUP", "OD_VIC_DATABASE_DROP_TABLE_BEFORE", "OD_VIC_DATABASE_SCHEMA_CLEANUP"}:
+    if transform == "OD_VIC_DATABASE_TABLE_CLEANUP":
         patch, meta = synthesize_database_drop_table_before(original, sample, action, rel_path)
         if meta.get("ok"):
             meta["transform"] = "OD_VIC_DATABASE_TABLE_CLEANUP"
