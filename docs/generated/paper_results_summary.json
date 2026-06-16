@@ -363,7 +363,7 @@
     {
       "applicability_rate": 0.8607594936708861,
       "materialized": 68,
-      "operator": "OD_VIC_ORMLITE_TABLE_CLEANUP",
+      "operator": "OD_VIC_DATABASE_TABLE_CLEANUP",
       "repaired": 68,
       "safety_rejected": 11,
       "selected": 79,
@@ -383,7 +383,7 @@
     {
       "applicability_rate": 1.0,
       "materialized": 25,
-      "operator": "ID_FASTJSON_PARSE_ASSERT",
+      "operator": "ID_JSON_API_PARSE_ASSERT",
       "repaired": 22,
       "safety_rejected": 0,
       "selected": 25,
@@ -423,7 +423,7 @@
     {
       "applicability_rate": 0.9,
       "materialized": 9,
-      "operator": "OD_FASTJSON_DEFAULT_TZ_LOCALE",
+      "operator": "OD_JSON_GLOBAL_FORMAT_STATE_RESET",
       "repaired": 9,
       "safety_rejected": 1,
       "selected": 10,
@@ -443,7 +443,7 @@
     {
       "applicability_rate": 0.6666666666666666,
       "materialized": 4,
-      "operator": "OD_VIC_JOBREGISTRY_SHUTDOWN_BEFORE",
+      "operator": "OD_VIC_JOB_REGISTRY_RESET_BEFORE",
       "repaired": 3,
       "safety_rejected": 2,
       "selected": 6,
@@ -463,7 +463,7 @@
     {
       "applicability_rate": 1.0,
       "materialized": 4,
-      "operator": "OD_MYBATIS_RESET_DB_SETUP",
+      "operator": "OD_DATABASE_FIXTURE_RESET_SETUP",
       "repaired": 4,
       "safety_rejected": 0,
       "selected": 4,
@@ -499,7 +499,7 @@
       10
     ],
     [
-      "missing_ormlite_entity_class: ormlite_entity_class_not_visible",
+      "missing_database_entity_class: database_entity_class_not_visible",
       9
     ],
     [
@@ -511,11 +511,11 @@
       6
     ],
     [
-      "category_disallowed_transform: OD_VIC_JOBREGISTRY_SHUTDOWN_BEFORE not allowed for category OD",
+      "category_disallowed_transform: OD_VIC_JOB_REGISTRY_RESET_BEFORE not allowed for category OD",
       2
     ],
     [
-      "inapplicable_ormlite_drop_table: ormlite dao/table pattern not visible",
+      "inapplicable_database_table_cleanup: database dao/table pattern not visible",
       2
     ],
     [
