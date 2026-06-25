@@ -64,7 +64,7 @@ General constraints:
 - Treat any context whose reason contains `non-editable context snippet` as evidence only. Never choose `start_line`, `end_line`, or `insert_after_line` from those snippets.
 - Chosen line spans must be inside `sample.target_method_start_line` to `sample.target_method_end_line`, unless the chosen transform explicitly adds class-level setup.
 - For target-file-only operators, do not invent `start_line`, `end_line`, `insert_after_line`, `array_variable`, or `receiver`. Set only the fields explicitly required by that operator.
-- Do not edit production code, comments only, or whitespace only.
+- Do not edit production code, except through an explicitly source-level guarded operator such as `ID_SORT_DECLARED_MEMBERS_BY_NAME`; never choose comments-only or whitespace-only edits.
 - Do not add imports. If a transform needs library types, use the transform that relies on fully qualified names.
 - Do not skip/disable the test, delete core assertions, or weaken assertions to trivial checks.
 - Do not invent classes, helper methods, imports, or variables.
@@ -120,7 +120,7 @@ If any required gate fails, choose `NO_SAFE_TRANSFORM`. A safe refusal is better
 
 StabilityOps DSL operator library:
 
-1. `ID_LIST_ORDER_INSENSITIVE`
+### `ID_LIST_ORDER_INSENSITIVE`
 
 Use when the target method asserts fixed positions from the same collection, such as:
 
@@ -150,7 +150,7 @@ The framework will synthesize `assertTrue(collection.contains(expected))` assert
 For `Arrays.asList(...)` equality, the framework will compare `new java.util.HashSet(...)` values.
 For indexed accessor assertions, the framework will synthesize a guarded `stream().anyMatch(...)` predicate using `java.util.Objects.equals`.
 
-2. `ID_ASSERTJ_LIST_ORDER_INSENSITIVE`
+### `ID_ASSERTJ_LIST_ORDER_INSENSITIVE`
 
 Use when the target method uses AssertJ-style collection assertions whose expected value is order-sensitive:
 
@@ -171,7 +171,7 @@ The executor will compare `HashSet` values using fully qualified `java.util` nam
 For Hamcrest `contains(...)`, the executor will rewrite to `org.hamcrest.Matchers.containsInAnyOrder(...)`.
 Do not choose this transform for generic object equality such as `assertThat(result).isEqualTo(expectedResult)`, scalar literals, exception messages, class literals, timestamps, ordinary strings, or cases where order is part of the tested behavior.
 
-3. `ID_QUERY_STRING_ORDER_INSENSITIVE_ASSERT`
+### `ID_QUERY_STRING_ORDER_INSENSITIVE_ASSERT`
 
 Use when the target method compares a query string whose parameter order is unstable with a normal JUnit `assertEquals("a=b&c=d", actualQuery);`.
 
@@ -183,7 +183,7 @@ Required parameters:
 The executor will compare the `&`-split parameter set using fully qualified `java.util` names.
 Do not choose this transform for unknown fluent APIs such as `.assertQueryString(...)`; use `NO_SAFE_TRANSFORM` unless the actual query string expression is visible in a normal `assertEquals`.
 
-4. `ID_JSON_READTREE_ASSERT`
+### `ID_JSON_READTREE_ASSERT`
 
 Use when all of the following hold:
 
@@ -227,7 +227,7 @@ If Jackson is project-visible but the target method does not declare a JSON exce
 Do not choose this transform if it would require `JSONObject`, `Map`, `TypeToken`, a new helper, or a new import.
 For a multi-line string assertion such as `assertEquals("{...}", jsonRequest);`, select the full assertion span from the `assertEquals(` line through the closing `);` line.
 
-5. `ID_JSON_API_PARSE_ASSERT`
+### `ID_JSON_API_PARSE_ASSERT`
 
 Use when the target method compares JSON-API serialized strings where object/map field order is unstable, including JSON-like strings that are not accepted by the generic tree parser.
 
@@ -254,7 +254,7 @@ Choose this over `ID_JSON_READTREE_ASSERT` when the visible code uses a JSON API
 The executor may use a fully qualified project-visible JSON parser when the local import is absent.
 Do not choose this transform for ordinary text output, XML, YAML, query strings, or JSON strings that require a missing field to be added.
 
-6. `ID_JSON_MISSING_TYPE_SETTER`
+### `ID_JSON_MISSING_TYPE_SETTER`
 
 Use when all of the following hold:
 
@@ -275,7 +275,7 @@ The framework will synthesize:
 receiver.setType("type_value");
 ```
 
-7. `ID_SORT_REFLECTION_RESULTS`
+### `ID_SORT_REFLECTION_RESULTS`
 
 Use when the target method obtains reflection or reflection-like members with APIs such as `getMethods()`, `getDeclaredMethods()`, `getFields()`, `getDeclaredFields()`, `getMemberMethods()`, or `getMemberFields()`, then asserts positions or list order. Reflection/member result order is not stable across runtimes.
 
@@ -288,7 +288,7 @@ Required parameters:
 The framework will synthesize a deterministic sort using fully qualified `java.util.Arrays` and `java.util.Comparator`, guarded by visible indexed/order-sensitive use of the same array.
 Do not choose this transform for ordinary lists, maps, JSON arrays, query strings, or non-reflection collections.
 
-8. `NIO_STATIC_FIELD_RESET`
+### `NIO_STATIC_FIELD_RESET`
 
 Use when the target method runs a property/test runner over a nested class with static mutable fields such as `iterations`, `values`, or `testCases`, and the flaky root cause is state retained from a previous execution.
 
@@ -319,7 +319,7 @@ Example:
 
 Do not output `reset_statements` or any Java statement such as `StateHolder.counter = 0;`.
 
-9. `NIO_STATIC_FIELD_RESET_INFER`
+### `NIO_STATIC_FIELD_RESET_INFER`
 
 Use when the target method needs to reset visible static mutable fields, but you only know the field names and the executor can infer the reset operation from visible static field declarations.
 
@@ -340,7 +340,7 @@ Required parameters:
 The executor infers `ASSIGN_ZERO`, `ASSIGN_FALSE`, `ASSIGN_NULL`, or `CLEAR_COLLECTION` from visible static field declarations.
 Do not use this if the static field declaration is not visible in the provided context.
 
-9. `OD_DATABASE_FIXTURE_RESET_SETUP`
+### `OD_DATABASE_FIXTURE_RESET_SETUP`
 
 Use for database-state tests where the target class exposes a session helper and tests mutate the same seeded database. This transform adds a deterministic setup method that restores the seed fixture using visible database setup evidence.
 
@@ -350,7 +350,7 @@ Required parameters:
 
 Do not choose this transform unless the target test class visibly exposes the supported database session/setup pattern.
 
-10. `OD_JSON_GLOBAL_FORMAT_STATE_RESET`
+### `OD_JSON_GLOBAL_FORMAT_STATE_RESET`
 
 Use for JSON date/time tests where parsing or serialization depends on global default timezone/locale. This transform adds a setup method that sets visible JSON global format state.
 
@@ -362,7 +362,7 @@ Required parameters:
 
 Do not choose this transform unless the class uses a supported test lifecycle style and the JSON global state API is visible.
 
-11. `OD_RESOURCE_REMOVE_PATH` / `OD_VIC_RESOURCE_REMOVE_PATH`
+### `OD_RESOURCE_REMOVE_PATH` / `OD_VIC_RESOURCE_REMOVE_PATH`
 
 Use when a target method creates state under a named external resource path and can safely clear that same path at the start of the target method, for example a registry or coordination client that exposes a path-removal API.
 
@@ -383,7 +383,7 @@ Guard conditions:
 - Do not choose this operator for database DAO/table state; use a database cleanup operator when its guards match.
 - Do not choose this operator if you cannot name a visible receiver.
 
-12. `OD_VIC_SUBTYPE_REGISTRY_RESTORE_BEFORE`
+### `OD_VIC_SUBTYPE_REGISTRY_RESTORE_BEFORE`
 
 Use for an order-dependent victim test that deserializes an extension subtype but does not register that subtype in the target method. Typical extension-factory pattern:
 
@@ -402,7 +402,7 @@ Required parameters:
 
 The framework will synthesize `HealthCheckerFactory.registerSubType(ExampleSubtype.class, ExampleSubtype.TYPE);`.
 
-13. `OD_VIC_JOB_REGISTRY_RESET_BEFORE`
+### `OD_VIC_JOB_REGISTRY_RESET_BEFORE`
 
 Use for victim tests where another test leaves job-registry state for a job name and the target method expects that job to be absent, shutdown, or reset. Examples include assertions over shutdown state, sharding counts, or local failover items.
 
@@ -413,7 +413,7 @@ Required parameters:
 
 The framework will synthesize `JobRegistry.getInstance().shutdown("job_name");`.
 
-14. `OD_VIC_SCHEMA_DROP_AFTER`
+### `OD_VIC_SCHEMA_DROP_AFTER`
 
 Use for schema-state victim tests where the target method creates a schema and should clean it after successful creation to avoid polluting repeated or later runs.
 
@@ -432,7 +432,7 @@ Guard conditions:
 - The schema class must already be visible in the target test file through a class declaration, class literal, or type use.
 - Do not provide a schema class unless it is visible in the target file.
 
-15. `OD_VIC_DATABASE_TABLE_CLEANUP`
+### `OD_VIC_DATABASE_TABLE_CLEANUP`
 
 Use for order-dependent victim tests where a previous test may leave a database table/schema for an entity class, and the target method creates or uses a DAO for that entity.
 
@@ -455,7 +455,7 @@ The executor will synthesize a guarded table cleanup call using the visible data
 Do not choose this operator unless a DAO/table pattern and the entity class are visible in the target file.
 Prefer this operator over `OD_VIC_RESOURCE_REMOVE_PATH` for database DAO/table pollution. Table pollution normally requires database cleanup, not path removal.
 
-16. `ID_JSON_READTREE_ASSERT_TRY_CATCH`
+### `ID_JSON_READTREE_ASSERT_TRY_CATCH`
 
 Use when the target method compares JSON strings with `assertEquals(expectedJson, actualJson)`, Jackson is project-visible, but the method does not declare `throws JsonProcessingException` or `throws Exception`.
 
@@ -466,7 +466,7 @@ Required parameters:
 
 The executor will wrap each semantic JSON comparison in a local try/catch using a fully qualified `ObjectMapper`.
 
-17. `ID_JSON_API_METHOD_ASSERTS`
+### `ID_JSON_API_METHOD_ASSERTS`
 
 Use when several method-level assertions compare JSON-like strings produced by visible JSON APIs such as `JSON.toJSONString`, `JSONPath`, `JSONObject`, or `JSONArray`, and the exact field/key order is unstable.
 
@@ -476,7 +476,7 @@ Required parameters:
 
 The executor will rewrite only JSON-like method assertions into semantic JSON comparisons. This operator is API-level; do not rely on repository names. Do not choose this for ordinary integer/string assertions.
 
-18. `ID_SORT_DECLARED_MEMBERS_BY_NAME`
+### `ID_SORT_DECLARED_MEMBERS_BY_NAME`
 
 Use when a target test or visible helper/production code consumes Java reflection declared members without a deterministic order. Typical evidence includes direct use of `getDeclaredMethods()`, `getDeclaredFields()`, or `getDeclaredConstructors()` whose result is later added to a collection, traversed, formatted, hashed, or asserted without sorting.
 This is a source-level guarded operator: the selected `target_file` remains the primary flaky test file, but the executor may edit the visible helper/production source file whose declared-member evidence is shown in source-level context snippets.
@@ -489,7 +489,7 @@ The executor searches guarded target/retrieved source locations and inserts a de
 
 Do not choose this operator for ordinary lists, maps, JSON arrays, query strings, non-reflection collections, or reflection APIs whose result is already sorted.
 
-19. `OD_RESTORE_ENV_AFTER_MUTATION`
+### `OD_RESTORE_ENV_AFTER_MUTATION`
 
 Use for order-dependent tests that save an environment variable, mutate it through a visible environment API, and should restore the saved value after the assertion or mutation.
 
@@ -511,7 +511,7 @@ Required parameters:
 The executor infers the saved variable and receiver when they are visible, then synthesizes a bounded restore such as `posix.setenv("PATH", path, 1);`.
 Do not choose this operator unless the saved value and mutation API are visible.
 
-20. `NO_SAFE_TRANSFORM`
+### `NO_SAFE_TRANSFORM`
 
 Use when none of the above transforms apply exactly and safely.
 

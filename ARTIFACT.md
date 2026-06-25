@@ -27,7 +27,9 @@ Those artifacts are created under ignored local directories when the runner is e
 
 The default preparation and repair path uses only pre-fix information. Developer/PR patches are not downloaded unless `scripts/prepare_idoft_samples.py` is invoked with `--download-developer-patches`, and that flag is intended only for offline evaluation analyses, not for repair prompts or patch generation.
 
-The default public configuration uses `prompts/stabilityops_typed_action.md` to ask the LLM for a typed StabilityOps DSL action. Deterministic code performs context retrieval, guarded action execution, patch safety filtering, and validation. The optional `prompts/stabilityops_action_revision.md` prompt is included only for bounded retry experiments and is disabled by default.
+The default public configuration uses `prompts/stabilityops_typed_action.md` to ask the LLM for a typed StabilityOps DSL action. Deterministic code performs context retrieval, guarded action execution, Patch Safety Filter checks, and validation. The optional `prompts/stabilityops_action_revision.md` prompt is included only for bounded retry experiments and is disabled by default.
+
+The full Patch Safety Filter used in the experiment is implemented in `stabilityops/runtime.py` as the combination of syntactic unsafe-edit checks and patch-applicability checks. The standalone `scripts/unsafe_patch_scan.py` helper is a lightweight diagnostic scanner for individual patches, not the full evaluation filter.
 
 ## 2. Hardware and Software Requirements
 
@@ -181,7 +183,7 @@ python3 scripts/evaluate_results.py \
 
 Important metrics:
 
-- `repair_success_rate`: patch passes target run and all rerun attempts;
+- `repair_success_rate`: patch passes the target run, passes all rerun attempts, and is not rejected by the Patch Safety Filter;
 - `unsafe_materialized_patch_rate`: materialized patches rejected by the safety filter;
 - `safety_rejection_rate`: typed actions refused before acceptable patch materialization;
 - `operator_coverage_rate`: samples for which a non-`NO_SAFE_TRANSFORM` operator was selected;

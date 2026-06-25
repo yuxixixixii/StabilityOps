@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
-"""Heuristic scanner for unsafe flaky-test repair patches."""
+"""Lightweight diagnostic scanner for unsafe flaky-test repair patches.
+
+The full experiment Patch Safety Filter lives in ``stabilityops/runtime.py``,
+where these syntactic checks are combined with patch-applicability checks.
+"""
 
 from __future__ import annotations
 

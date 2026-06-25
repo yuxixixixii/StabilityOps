@@ -189,7 +189,9 @@ The public StabilityOps configuration uses one LLM prompt per repair attempt:
 prompts/stabilityops_typed_action.md
 ```
 
-That prompt asks the LLM to output a typed StabilityOps DSL action, not a free-form patch. Context retrieval, schema checks, operator guards, patch materialization, safety filtering, and rerun validation are handled by deterministic code.
+That prompt asks the LLM to output a typed StabilityOps DSL action, not a free-form patch. Context retrieval, schema checks, operator guards, patch materialization, Patch Safety Filter checks, and rerun validation are handled by deterministic code.
+
+The full Patch Safety Filter used by the experiment is implemented in `stabilityops/runtime.py` as the combination of syntactic unsafe-edit checks and patch-applicability checks. The standalone `scripts/unsafe_patch_scan.py` script is only a lightweight diagnostic scanner for individual patches; it is not the full evaluation filter.
 
 `prompts/stabilityops_action_revision.md` is included for optional bounded retry experiments. It is disabled in the default public configs (`transform_action_repair_attempts: 0`).
 
@@ -242,6 +244,8 @@ python3 scripts/evaluate_results.py \
   --results runs/experiments/<run_id>/results.jsonl \
   --output-json runs/experiments/<run_id>/eval.json
 ```
+
+In `eval.json`, `repair_success_rate` counts patches that pass the target test once, complete all configured post-fix reruns without failures, and are not rejected by the Patch Safety Filter.
 
 ## Packaging a Clean Release
 

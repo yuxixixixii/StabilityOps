@@ -745,8 +745,9 @@ def synthesize_declared_members_sort_by_name(sample: dict[str, str]) -> tuple[st
     """Generic guarded operator for declaration-order reflection instability.
 
     This operator avoids repository-slug checks. It applies only when a source
-    file contains a direct declared-member reflection result that is consumed
-    without an intervening deterministic sort.
+    file already surfaced as target/retrieved evidence contains a direct
+    declared-member reflection result that is consumed without an intervening
+    deterministic sort.
     """
     repo_dir = Path(sample.get("remote_repo_dir", ""))
     if not repo_dir.exists():
@@ -796,15 +797,19 @@ def synthesize_declared_members_sort_by_name(sample: dict[str, str]) -> tuple[st
     test_path = find_test_file(sample)
     if test_path and test_path.exists():
         search_roots.append(test_path)
-    for root_name in ["src/main/java", "src/test/java"]:
-        root = repo_dir / root_name
-        if root.exists():
-            search_roots.extend(root.rglob("*.java"))
-    if len(search_roots) <= 1:
-        # Multi-module projects often keep sources under module/src/main/java.
-        # Scan the repository, but keep the guard tied to declared-member APIs
-        # and deterministic local rewrites rather than repository identity.
-        search_roots.extend(repo_dir.rglob("*.java"))
+
+    # Keep non-target source rewrites tied to the same source-focus evidence
+    # exposed to the LLM. This preserves the paper-facing boundary that the
+    # executor may edit a helper/production file only when the guarded source
+    # pattern has been retrieved as pre-fix evidence, instead of searching for
+    # an arbitrary repository-wide edit target at materialization time.
+    for snippet in extract_source_focus_snippets(sample, "ID"):
+        rel_path = str(snippet.get("path") or "").strip()
+        if not rel_path:
+            continue
+        path = repo_dir / rel_path
+        if path.exists() and path.suffix == ".java":
+            search_roots.append(path)
 
     seen: set[Path] = set()
     for path in search_roots:
