@@ -29,6 +29,7 @@ from stabilityops.runtime import (  # noqa: E402
     TEST_FIELD,
     ExperimentConfig,
     ModelEndpoint,
+    applicable_transform_hints,
     allowed_transforms_for_sample,
     append_jsonl,
     bounded_text,
@@ -152,6 +153,7 @@ def build_action_payload(sample: dict[str, str], bundle: dict[str, Any]) -> dict
         "sample": compact_sample_payload(bundle),
         "context_plan": context_plan,
         "context_snippets": context_snippets,
+        "applicable_transform_hints": applicable_transform_hints(sample),
         "information_flow": [
             {
                 "component": "Deterministic Category Context Retriever",
